@@ -16,6 +16,9 @@ export class User extends Document {
 
   @Prop({ default: false })
   isEmailVerified: boolean;
+
+  @Prop()
+  verificationToken: string | null
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
