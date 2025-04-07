@@ -21,7 +21,7 @@ export class AuthService {
         }
 
         const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-        const verificationToken = randomBytes(32).toString('hex');
+        const verificationToken = this.generateVerificationToken();
 
         const user = new this.userModel({
             ...createUserDto,
@@ -69,5 +69,24 @@ export class AuthService {
         await user.save()
 
         return user;
+    }
+
+    async resendVerification(email: string) {
+        const user = await this.userModel.findOne({ email })
+        if (!user) {
+            throw new BadRequestException('User not found');
+        }
+        if (user.isEmailVerified) {
+            throw new BadRequestException('Email already verified');
+        }
+
+        const newToken = this.generateVerificationToken();
+        user.verificationToken = newToken;
+        
+        this.sendVerificationEmail(email, newToken)
+    }
+
+    private generateVerificationToken(): string {
+        return randomBytes(32).toString('hex');
     }
 }
