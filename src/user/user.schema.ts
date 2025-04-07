@@ -17,7 +17,7 @@ export class User extends Document {
   @Prop({ default: false })
   isEmailVerified: boolean;
 
-  @Prop()
+  @Prop({type: String, default: null})
   verificationToken: string | null
 }
 
