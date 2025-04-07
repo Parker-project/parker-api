@@ -13,8 +13,8 @@ export class AuthService {
         @InjectModel(User.name) private userModel: Model<UserDocument>
     ) { }
     async signup(createUserDto: CreateUserDto) {
-        const existingUser = await this.userModel.find({ email: createUserDto.email })
-
+        const existingUser = await this.userModel.findOne({ email: createUserDto.email })
+        console.log("🚀 ~ AuthService ~ signup ~ existingUser:", existingUser)
         if (existingUser) {
             throw new ConflictException('Email address is already in use')
         }
