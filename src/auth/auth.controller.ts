@@ -1,6 +1,7 @@
-import { Body, Controller, Patch, Post } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Patch, Post } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -12,7 +13,10 @@ export class AuthController {
     }
 
     @Patch('verify-email')
-    verifyEmail(@Body() verificationToken: string) {
-        return this.authService.verifyEmail(verificationToken)
+    verifyEmail(@Body() verifyEmailDto: VerifyEmailDto) {
+        if (!verifyEmailDto.verificationToken) {
+            throw new BadRequestException('Invalid verification token');
+        }
+        return this.authService.verifyEmail(verifyEmailDto)
     }
 }

@@ -6,6 +6,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import * as nodemailer from 'nodemailer';
+import { VerifyEmailDto } from './dto/verify-email.dto';
 
 @Injectable()
 export class AuthService {
@@ -55,11 +56,11 @@ export class AuthService {
         })
     }
 
-    async verifyEmail(token: string) {
-        const user = await this.userModel.findOne({ verificationToken: token })
+    async verifyEmail(verifyEmailDto: VerifyEmailDto) {
+        const user = await this.userModel.findOne({ verificationToken: verifyEmailDto.verificationToken })
 
         if (!user) {
-            throw new BadRequestException('Invalid or expired verification token');
+            throw new BadRequestException('Invalid verification token');
         }
 
         user.isEmailVerified = true;
