@@ -22,13 +22,12 @@ export class AuthService {
         const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
         const verificationToken = randomBytes(32).toString('hex');
 
-        const user = await this.userModel.create({
-            email: createUserDto.email,
-            firstName: createUserDto.firstName,
-            lastName: createUserDto.lastName,
+        const user = new this.userModel({
+            ...createUserDto,
             password: hashedPassword,
             verificationToken
         })
+        await user.save()
         
         // Send Email verification 
         
