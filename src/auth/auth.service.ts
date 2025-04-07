@@ -12,7 +12,7 @@ export class AuthService {
     constructor(
         @InjectModel(User.name) private userModel: Model<UserDocument>
     ) { }
-    async signup(createUserDto: CreateUserDto) {
+    async signup(createUserDto: CreateUserDto): Promise<{ message: string }> {
         const existingUser = await this.userModel.findOne({ email: createUserDto.email })
         console.log("🚀 ~ AuthService ~ signup ~ existingUser:", existingUser)
         if (existingUser) {
