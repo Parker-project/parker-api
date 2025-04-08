@@ -29,7 +29,26 @@ export class AuthController {
     }
 
     @Post('login')
-    login(@Body() userLoginDto: UserLoginDto, @Res({passthrough:true}) res: Response) {
-        return this.authService.login(userLoginDto)
+    async login(@Body() userLoginDto: UserLoginDto, @Res({ passthrough: true }) res: Response) {
+        const { token, user } = await this.authService.login(userLoginDto);
+
+        res.cookie('access_token', token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'strict',
+            maxAge: userLoginDto.rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000 // 30 days or 1 day
+        })
+        return { message: 'Logged in successfully', user }
+    }
+
+    @Post('logout')
+    logout(@Res({ passthrough: true }) res: Response) {
+        res.clearCookie('access_token', {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'strict',
+        });
+
+        return { message: 'Logged out successfully' };
     }
 }

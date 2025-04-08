@@ -8,15 +8,16 @@ import { randomBytes } from 'crypto';
 import * as nodemailer from 'nodemailer';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { UserLoginDto } from './dto/user-login.dto';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
     constructor(
-        @InjectModel(User.name) private userModel: Model<UserDocument>
+        @InjectModel(User.name) private userModel: Model<UserDocument>,
+        private jwtService: JwtService
     ) { }
     async signup(createUserDto: CreateUserDto): Promise<{ message: string }> {
         const existingUser = await this.userModel.findOne({ email: createUserDto.email })
-        console.log("🚀 ~ AuthService ~ signup ~ existingUser:", existingUser)
         if (existingUser) {
             throw new ConflictException('Email address is already in use')
         }
@@ -89,24 +90,24 @@ export class AuthService {
 
     async login(userLoginDto: UserLoginDto) {
         const user = await this.userModel.findOne({ email: userLoginDto.email })
-        if (!user) {
-            throw new UnauthorizedException('Invalid Email');
-        }
-
-        const isMatch = bcrypt.compare(userLoginDto.password, user.password)
-        if (!isMatch) {
-            throw new UnauthorizedException('Invalid Password')
+        const isMatch = bcrypt.compare(userLoginDto.password, user?.password)
+        if (!isMatch || !user) {
+            throw new UnauthorizedException('Invalid Credentials')
         }
 
         if (!user.isEmailVerified) {
             throw new ForbiddenException('Please verify your email first');
         }
 
-        
+        const payload = { sub: user._id, role: user.role };
+        const token = await this.jwtService.signAsync(payload);
 
+        return { token, user };
     }
 
     private generateVerificationToken(): string {
         return randomBytes(32).toString('hex');
     }
+
+    
 }
