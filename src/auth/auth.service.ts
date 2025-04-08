@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { Model } from 'mongoose';
 import { User, UserDocument } from '../user/user.schema'
@@ -7,6 +7,7 @@ import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import * as nodemailer from 'nodemailer';
 import { VerifyEmailDto } from './dto/verify-email.dto';
+import { UserLoginDto } from './dto/user-login.dto';
 
 @Injectable()
 export class AuthService {
@@ -82,8 +83,27 @@ export class AuthService {
 
         const newToken = this.generateVerificationToken();
         user.verificationToken = newToken;
-        
+
         this.sendVerificationEmail(email, newToken)
+    }
+
+    async login(userLoginDto: UserLoginDto) {
+        const user = await this.userModel.findOne({ email: userLoginDto.email })
+        if (!user) {
+            throw new UnauthorizedException('Invalid Email');
+        }
+
+        const isMatch = bcrypt.compare(userLoginDto.password, user.password)
+        if (!isMatch) {
+            throw new UnauthorizedException('Invalid Password')
+        }
+
+        if (!user.isEmailVerified) {
+            throw new ForbiddenException('Please verify your email first');
+        }
+
+        
+
     }
 
     private generateVerificationToken(): string {
