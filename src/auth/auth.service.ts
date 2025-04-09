@@ -90,7 +90,7 @@ export class AuthService {
 
     async login(userLoginDto: UserLoginDto) {
         const user = await this.userModel.findOne({ email: userLoginDto.email })
-        const isMatch = bcrypt.compare(userLoginDto.password, user?.password)
+        const isMatch = await bcrypt.compare(userLoginDto.password, user?.password)
         if (!isMatch || !user) {
             throw new UnauthorizedException('Invalid Credentials')
         }
@@ -109,5 +109,5 @@ export class AuthService {
         return randomBytes(32).toString('hex');
     }
 
-    
+
 }
