@@ -16,7 +16,7 @@ export class AuthService {
         @InjectModel(User.name) private userModel: Model<UserDocument>,
         private jwtService: JwtService
     ) { }
-    async signup(createUserDto: CreateUserDto): Promise<{ message: string }> {
+    async signup(createUserDto: CreateUserDto) {
         const existingUser = await this.userModel.findOne({ email: createUserDto.email })
         if (existingUser) {
             throw new ConflictException('Email address is already in use')
@@ -34,11 +34,9 @@ export class AuthService {
 
         // Send Email verification 
         await this.sendVerificationEmail(createUserDto.email, verificationToken)
-
-        return { message: 'Check your email to verify your account' };
     }
 
-    private async sendVerificationEmail(to: string, token: string) {
+    private async sendVerificationEmail(to: string, token: string): Promise<{ message: string }> {
         const transporter = nodemailer.createTransport({
             host: process.env.SMTP_HOST,
             port: Number(process.env.SMTP_PORT),
@@ -56,6 +54,8 @@ export class AuthService {
             subject: 'Verify your Parker App Account',
             html: `<p>Click <a href="${url}">here</a> to verify your email.</p>`,
         })
+
+        return { message: 'Check your email to verify your account' };
     }
 
     async verifyEmail(verifyEmailDto: VerifyEmailDto) {
@@ -84,8 +84,9 @@ export class AuthService {
 
         const newToken = this.generateVerificationToken();
         user.verificationToken = newToken;
+        await user.save()
 
-        this.sendVerificationEmail(email, newToken)
+        return this.sendVerificationEmail(email, newToken)
     }
 
     async login(userLoginDto: UserLoginDto) {
