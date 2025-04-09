@@ -4,7 +4,7 @@ import { ROLES_KEY } from '../../common/decorators/role.decorator';
 import { Observable } from 'rxjs';
 
 @Injectable()
-export class RoleGuard implements CanActivate {
+export class RolesGuard implements CanActivate {
     constructor(private reflector: Reflector) { }
 
     canActivate(context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
