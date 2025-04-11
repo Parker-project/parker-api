@@ -90,11 +90,11 @@ export class AuthService {
     }
 
     async login(userLoginDto: UserLoginDto) {
-        const user = await this.userModel.findOne({ email: userLoginDto.email })
-        const isMatch = await bcrypt.compare(userLoginDto.password, user?.password)
-        if (!isMatch || !user) {
-            throw new UnauthorizedException('Invalid Credentials')
-        }
+        const user = await this.userModel.findOne({ email: userLoginDto.email });
+        if (!user) throw new UnauthorizedException('Invalid Email');
+
+        const isPasswordMatch = await bcrypt.compare(userLoginDto.password, user.password);
+        if (!isPasswordMatch) throw new UnauthorizedException('Invalid Password');
 
         if (!user.isEmailVerified) {
             this.resendVerification(userLoginDto.email)
@@ -102,9 +102,9 @@ export class AuthService {
         }
 
         const payload = { sub: user._id, role: user.role };
-        const token = await this.jwtService.signAsync(payload);
+        const accessToken = await this.jwtService.signAsync(payload);
 
-        return { token, user };
+        return { accessToken , user };
     }
 
     private generateVerificationToken(): string {
