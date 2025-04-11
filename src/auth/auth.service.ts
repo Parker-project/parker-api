@@ -70,7 +70,7 @@ export class AuthService {
 
         await user.save()
 
-        return user;
+        return { message: "Your email is verified", user };
     }
 
     async resendVerification(email: string) {
