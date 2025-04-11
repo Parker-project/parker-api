@@ -97,6 +97,7 @@ export class AuthService {
         }
 
         if (!user.isEmailVerified) {
+            this.resendVerification(userLoginDto.email)
             throw new ForbiddenException('Please verify your email first');
         }
 
