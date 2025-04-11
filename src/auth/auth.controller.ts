@@ -1,10 +1,14 @@
-import { BadRequestException, Body, Controller, Patch, Post, Res } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Patch, Post, Res, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
 import { UserLoginDto } from './dto/user-login.dto';
 import { Response } from 'express';
+import { RolesGuard } from './guards/role.guard';
+import { Role } from 'src/common/enums/role.enum';
+import { Roles } from 'src/common/decorators/role.decorator';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -30,9 +34,9 @@ export class AuthController {
 
     @Post('login')
     async login(@Body() userLoginDto: UserLoginDto, @Res({ passthrough: true }) res: Response) {
-        const { token, user } = await this.authService.login(userLoginDto);
+        const { accessToken, user } = await this.authService.login(userLoginDto);
 
-        res.cookie('access_token', token, {
+        res.cookie('access_token', accessToken, {
             httpOnly: true,
             secure: true,
             sameSite: 'strict',
@@ -41,6 +45,7 @@ export class AuthController {
         return { message: 'Logged in successfully', user }
     }
 
+    @UseGuards(JwtAuthGuard)
     @Post('logout')
     logout(@Res({ passthrough: true }) res: Response) {
         res.clearCookie('access_token', {
