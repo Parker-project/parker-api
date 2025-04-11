@@ -20,6 +20,9 @@ export class User extends Document {
 
   @Prop({type: String, default: null})
   verificationToken: string | null
+
+  @Prop({ default: 'google' }) 
+  provider: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

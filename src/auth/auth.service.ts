@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, Req, Res, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { Model } from 'mongoose';
 import { User, UserDocument } from '../user/user.schema'
@@ -9,12 +9,14 @@ import * as nodemailer from 'nodemailer';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { UserLoginDto } from './dto/user-login.dto';
 import { JwtService } from '@nestjs/jwt';
+import { UserService } from 'src/user/user.service';
 
 @Injectable()
 export class AuthService {
     constructor(
         @InjectModel(User.name) private userModel: Model<UserDocument>,
-        private jwtService: JwtService
+        private readonly jwtService: JwtService,
+        private readonly userService: UserService
     ) { }
     async signup(createUserDto: CreateUserDto) {
         const existingUser = await this.userModel.findOne({ email: createUserDto.email })
@@ -104,12 +106,31 @@ export class AuthService {
         const payload = { sub: user._id, role: user.role };
         const accessToken = await this.jwtService.signAsync(payload);
 
-        return { accessToken , user };
+        return { accessToken, user };
     }
 
-    private generateVerificationToken(): string {
+    generateVerificationToken(): string {
         return randomBytes(32).toString('hex');
     }
 
+    async handleGoogleLogin(googleUser: any) {
+        const { email, name, picture } = googleUser;
+
+        let user = await this.userModel.findOne({ email })
+
+        if (!user) {
+            user = await this.userService.createGoogleUser({
+                email,
+                name,
+                picture,
+                provider: 'google',
+            });
+        }
+
+        const payload = { sub: user._id, role: user.role };
+        const accessToken = await this.jwtService.signAsync(payload);
+
+        return { accessToken, user };
+    }
 
 }

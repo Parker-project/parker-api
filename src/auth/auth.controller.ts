@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Patch, Post, Res, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Patch, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
@@ -9,6 +9,8 @@ import { RolesGuard } from './guards/role.guard';
 import { Role } from 'src/common/enums/role.enum';
 import { Roles } from 'src/common/decorators/role.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { ConfigService } from '@nestjs/config';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
 export class AuthController {
@@ -55,5 +57,21 @@ export class AuthController {
         });
 
         return { message: 'Logged out successfully' };
+    }
+
+    @UseGuards(AuthGuard('google'))
+    @Get('google')
+    async googleAuth() {
+        // redirect to Google
+    }
+
+    @UseGuards(AuthGuard('google'))
+    @Get('google/redirect')
+    async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
+        const { accessToken, user } = await this.authService.handleGoogleLogin(req.user);
+
+        res.cookie('accessToken', accessToken, { httpOnly: true });
+
+        return res.redirect('http://localhost:4200/success'); // frontend success page    }
     }
 }
