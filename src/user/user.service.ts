@@ -5,7 +5,7 @@ import { Model } from 'mongoose';
 
 @Injectable()
 export class UserService {
-    constructor(@InjectModel(User.name) private userModel: Model<UserDocument>,
+    constructor(@InjectModel(User.name) private userModel: Model<User>,
     ) { }
     async createGoogleUser(googleData: { email: string; name: string; picture: string; provider: string }) {
         const newUser = new this.userModel({
