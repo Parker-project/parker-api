@@ -4,17 +4,19 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
 import { UserLoginDto } from './dto/user-login.dto';
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import { RolesGuard } from './guards/role.guard';
 import { Role } from 'src/common/enums/role.enum';
 import { Roles } from 'src/common/decorators/role.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { ConfigService } from '@nestjs/config';
 import { AuthGuard } from '@nestjs/passport';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
+
 
 @Controller('auth')
 export class AuthController {
-    constructor(private readonly authService: AuthService) { }
+    constructor(private readonly authService: AuthService, private readonly configService: ConfigService) { }
 
     @Post('signup')
     signup(@Body() createUserDTO: CreateUserDto) {
@@ -65,13 +67,13 @@ export class AuthController {
         // redirect to Google
     }
 
-    @UseGuards(AuthGuard('google'))
-    @Get('google/redirect')
+    @UseGuards(GoogleAuthGuard)
+    @Get('google/callback')
     async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
-        const { accessToken, user } = await this.authService.handleGoogleLogin(req.user);
+        const { accessToken, user } = await this.authService.handleGoogleLogin(req.user as any);
 
         res.cookie('accessToken', accessToken, { httpOnly: true });
 
-        return res.redirect('http://localhost:4200/success'); // frontend success page    }
+        return res.redirect(this.configService.getOrThrow<string>('FRONTEND_URL)'));
     }
 }
