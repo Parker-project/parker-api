@@ -74,6 +74,6 @@ export class AuthController {
 
         res.cookie('accessToken', accessToken, { httpOnly: true });
 
-        return res.redirect(this.configService.getOrThrow<string>('FRONTEND_URL)'));
+        return { message: 'Logged in successfully', user }
     }
 }
