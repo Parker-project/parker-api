@@ -4,7 +4,7 @@ import { Role } from 'src/common/enums/role.enum';
 
 export type UserDocument = User & Document;
 
-@Schema({timestamps:true})
+@Schema({ timestamps: true })
 export class User extends Document {
   @Prop({ required: true, unique: true })
   email: string;
@@ -18,10 +18,10 @@ export class User extends Document {
   @Prop({ default: false })
   isEmailVerified: boolean;
 
-  @Prop({type: String, default: null})
+  @Prop({ type: String, default: null })
   verificationToken: string | null
 
-  @Prop({ default: 'google' }) 
+  @Prop({ required: false })
   provider: string;
 }
 

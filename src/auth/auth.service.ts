@@ -26,9 +26,12 @@ export class AuthService {
 
         const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
         const verificationToken = this.generateVerificationToken();
+        const { email, firstName, lastName } = createUserDto
 
         const user = new this.userModel({
-            ...createUserDto,
+            firstName,
+            lastName,
+            email,
             password: hashedPassword,
             verificationToken
         })
