@@ -1,14 +1,15 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, Req, Res, UnauthorizedException } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
-import { Model } from 'mongoose';
-import { User, UserDocument } from '../user/user.schema'
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import * as nodemailer from 'nodemailer';
+import { JwtService } from '@nestjs/jwt';
+import { Model } from 'mongoose';
+
+import { CreateUserDto } from './dto/create-user.dto';
+import { User, UserDocument } from '../user/user.schema'
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { UserLoginDto } from './dto/user-login.dto';
-import { JwtService } from '@nestjs/jwt';
 import { UserService } from 'src/user/user.service';
 
 @Injectable()
@@ -139,7 +140,7 @@ export class AuthService {
         const payload = { sub: user._id, role: user.role };
         const accessToken = await this.jwtService.signAsync(payload);
 
-        return { accessToken, user };
+        return { accessToken };
     }
 
 }

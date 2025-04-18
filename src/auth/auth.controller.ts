@@ -1,18 +1,20 @@
 import { BadRequestException, Body, Controller, Get, Patch, Post, Req, Res, UseGuards } from '@nestjs/common';
-import { AuthService } from './auth.service';
+import { ConfigService } from '@nestjs/config';
+import { AuthGuard } from '@nestjs/passport';
+import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Response, Request } from 'express';
+
+
 import { CreateUserDto } from './dto/create-user.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ResendVerificationDto } from './dto/resend-verification.dto';
 import { UserLoginDto } from './dto/user-login.dto';
-import { Response, Request } from 'express';
+import { AuthService } from './auth.service';
 import { RolesGuard } from './guards/role.guard';
 import { Role } from 'src/common/enums/role.enum';
 import { Roles } from 'src/common/decorators/role.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { ConfigService } from '@nestjs/config';
-import { AuthGuard } from '@nestjs/passport';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
-import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 
 @Controller('auth')
@@ -34,19 +36,22 @@ export class AuthController {
     @ApiBody({ type: VerifyEmailDto })
     @ApiResponse({ status: 200, description: 'Email verified' })
     @ApiResponse({ status: 400, description: 'Invalid token' })
-    verifyEmail(@Body() verifyEmailDto: VerifyEmailDto) {
+    verifyEmail(@Body() verifyEmailDto: VerifyEmailDto, @Res() res: Response) {
         if (!verifyEmailDto.verificationToken) {
             throw new BadRequestException('Invalid verification token');
         }
-        return this.authService.verifyEmail(verifyEmailDto)
+        const result =  this.authService.verifyEmail(verifyEmailDto)
+        return res.status(200).json(result)
     }
 
     @Patch('resend-verification')
     @ApiOperation({ summary: 'Resend email verification link' })
     @ApiBody({ type: ResendVerificationDto })
     @ApiResponse({ status: 200, description: 'Email sent' })
-    resendVerificationEmail(@Body() resendVerification: ResendVerificationDto) {
-        return this.authService.resendVerification(resendVerification.email)
+    resendVerificationEmail(@Body() resendVerification: ResendVerificationDto, @Res() res: Response) {
+        const result =  this.authService.resendVerification(resendVerification.email)
+        return res.status(200).json(result)
+
     }
 
     @Post('login')
@@ -63,7 +68,7 @@ export class AuthController {
             sameSite: 'strict',
             maxAge: userLoginDto.rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000 // 30 days or 1 day
         })
-        return { message: 'Logged in successfully', user }
+        return res.status(200).json({ message: 'Logged in successfully', user })
     }
 
     @UseGuards(JwtAuthGuard)
@@ -78,7 +83,7 @@ export class AuthController {
             sameSite: 'strict',
         });
 
-        return { message: 'Logged out successfully' };
+        return res.status(200).json({ message: 'Logged out successfully' })
     }
 
     @UseGuards(AuthGuard('google'))
@@ -93,10 +98,10 @@ export class AuthController {
     @ApiOperation({ summary: 'Google callback endpoint that sets access token cookie' })
     @ApiResponse({ status: 302, description: 'Redirect to frontend with user info' })
     async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
-        const { accessToken, user } = await this.authService.handleGoogleLogin(req.user as any);
+        const { accessToken } = await this.authService.handleGoogleLogin(req.user as any);
 
         res.cookie('accessToken', accessToken, { httpOnly: true });
 
-        return { message: 'Logged in successfully', user }
+        return res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
     }
 }
