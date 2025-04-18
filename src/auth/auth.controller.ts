@@ -7,7 +7,7 @@ import { Response, Request } from 'express';
 
 import { CreateUserDto } from './dto/create-user.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
-import { ResendVerificationDto } from './dto/resend-verification.dto';
+import { MailDto } from './dto/mail.dto';
 import { UserLoginDto } from './dto/user-login.dto';
 import { AuthService } from './auth.service';
 import { RolesGuard } from './guards/role.guard';
@@ -15,6 +15,7 @@ import { Role } from 'src/common/enums/role.enum';
 import { Roles } from 'src/common/decorators/role.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 
 @Controller('auth')
@@ -40,16 +41,16 @@ export class AuthController {
         if (!verifyEmailDto.verificationToken) {
             throw new BadRequestException('Invalid verification token');
         }
-        const result =  this.authService.verifyEmail(verifyEmailDto)
+        const result = this.authService.verifyEmail(verifyEmailDto)
         return res.status(200).json(result)
     }
 
     @Patch('resend-verification')
     @ApiOperation({ summary: 'Resend email verification link' })
-    @ApiBody({ type: ResendVerificationDto })
+    @ApiBody({ type: MailDto })
     @ApiResponse({ status: 200, description: 'Email sent' })
-    resendVerificationEmail(@Body() resendVerification: ResendVerificationDto, @Res() res: Response) {
-        const result =  this.authService.resendVerification(resendVerification.email)
+    resendVerificationEmail(@Body() resendVerification: MailDto, @Res() res: Response) {
+        const result = this.authService.resendVerification(resendVerification.email)
         return res.status(200).json(result)
 
     }
@@ -74,7 +75,7 @@ export class AuthController {
     @UseGuards(JwtAuthGuard)
     @Post('logout')
     @ApiOperation({ summary: 'Logout user and clear access token cookie' })
-    @ApiBody({ type: ResendVerificationDto })
+    @ApiBody({ type: MailDto })
     @ApiResponse({ status: 200, description: 'Email sent' })
     logout(@Res({ passthrough: true }) res: Response) {
         res.clearCookie('access_token', {
@@ -103,5 +104,20 @@ export class AuthController {
         res.cookie('accessToken', accessToken, { httpOnly: true });
 
         return res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
+    }
+
+    @Post('forgot-password')
+    @ApiOperation({ summary: 'Send password reset email' })
+    @ApiResponse({ status: 200, description: 'Reset link sent if user exists' })
+    async forgotPassword(@Body() dto: MailDto) {
+        return this.authService.sendPasswordResetEmail(dto.email);
+    }
+
+    @Post('reset-password')
+    @ApiOperation({ summary: 'Reset password using reset token' })
+    @ApiResponse({ status: 200, description: 'Password reset successful' })
+    @ApiResponse({ status: 400, description: 'Invalid or expired token' })
+    async resetPassword(@Body() dto: ResetPasswordDto) {
+        return this.authService.resetPassword(dto.token, dto.password);
     }
 }
