@@ -12,10 +12,10 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
   const configService = app.get(ConfigService);
   const config = new DocumentBuilder()
-    .setTitle('Cats example')
-    .setDescription('The cats API description')
+    .setTitle('Parker API')
     .setVersion('1.0')
-    .addTag('cats')
+    .addTag('Categories')
+    .addCookieAuth('access_token')
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);
