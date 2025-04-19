@@ -10,8 +10,8 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { User, UserDocument } from '../user/user.schema'
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { UserLoginDto } from './dto/user-login.dto';
-import { UserService } from 'src/user/user.service';
-import { EmailOptions } from 'src/common/interfaces/email-options.interface';
+import { UserService } from '../user/user.service';
+import { EmailOptions } from '../common/interfaces/email-options.interface';
 
 @Injectable()
 export class AuthService {
