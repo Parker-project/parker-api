@@ -24,13 +24,13 @@ export class User extends Document {
   @Prop({ required: false })
   provider: string;
 
-  @Prop()
+  @Prop({ type: String })
   firstName: string
 
-  @Prop()
+  @Prop({ type: String })
   lastName: string
 
-  @Prop()
+  @Prop({ type: String })
   resetToken: string | null
 }
 

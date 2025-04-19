@@ -15,18 +15,18 @@ import { EmailOptions } from 'src/common/interfaces/email-options.interface';
 
 @Injectable()
 export class AuthService {
+    private readonly transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT),
+        auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS,
+        },
+    })
     constructor(
         @InjectModel(User.name) private userModel: Model<User>,
         private readonly jwtService: JwtService,
         private readonly userService: UserService,
-        private readonly transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST,
-            port: Number(process.env.SMTP_PORT),
-            auth: {
-                user: process.env.SMTP_USER,
-                pass: process.env.SMTP_PASS,
-            },
-        })
     ) { }
     async signup(createUserDto: CreateUserDto) {
         const existingUser = await this.userModel.findOne({ email: createUserDto.email })
