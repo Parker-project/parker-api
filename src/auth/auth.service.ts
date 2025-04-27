@@ -1,185 +1,184 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import * as bcrypt from 'bcrypt';
-import { randomBytes } from 'crypto';
-import * as nodemailer from 'nodemailer';
-import { JwtService } from '@nestjs/jwt';
-import { Model } from 'mongoose';
+    import { BadRequestException, ConflictException, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+    import { InjectModel } from '@nestjs/mongoose';
+    import * as bcrypt from 'bcrypt';
+    import { randomBytes } from 'crypto';
+    import * as nodemailer from 'nodemailer';
+    import { JwtService } from '@nestjs/jwt';
+    import { Model } from 'mongoose';
 
-import { CreateUserDto } from './dto/create-user.dto';
-import { User, UserDocument } from '../user/user.schema'
-import { VerifyEmailDto } from './dto/verify-email.dto';
-import { UserLoginDto } from './dto/user-login.dto';
-import { UserService } from '../user/user.service';
-import { EmailOptions } from '../common/interfaces/email-options.interface';
+    import { CreateUserDto } from './dto/create-user.dto';
+    import { User, UserDocument } from '../user/user.schema'
+    import { VerifyEmailDto } from './dto/verify-email.dto';
+    import { UserLoginDto } from './dto/user-login.dto';
+    import { UserService } from '../user/user.service';
+    import { EmailOptions } from '../common/interfaces/email-options.interface';
 
-@Injectable()
-export class AuthService {
-    private readonly transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: Number(process.env.SMTP_PORT),
-        auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS,
-        },
-    })
-    constructor(
-        @InjectModel(User.name) private userModel: Model<User>,
-        private readonly jwtService: JwtService,
-        private readonly userService: UserService,
-    ) { }
-    async signup(createUserDto: CreateUserDto) {
-        const existingUser = await this.userModel.findOne({ email: createUserDto.email })
-        if (existingUser) {
-            throw new ConflictException('Email address is already in use')
-        }
-
-        const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-        const verificationToken = this.generateToken();
-        const { email, firstName, lastName } = createUserDto
-
-        const user = new this.userModel({
-            firstName,
-            lastName,
-            email,
-            password: hashedPassword,
-            verificationToken
+    @Injectable()
+    export class AuthService {
+        private readonly transporter = nodemailer.createTransport({
+            host: process.env.SMTP_HOST,
+            port: Number(process.env.SMTP_PORT),
+            auth: {
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASS,
+            },
         })
-        await user.save()
-        // Send Email verification
-        await this.sendEmail({
-            to: createUserDto.email,
-            subject: 'Verify your Parker App Account',
-            html: `<p>Click <a href="${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}">here</a> to verify your email.</p>`,
-        });
-    }
+        constructor(
+            @InjectModel(User.name) private userModel: Model<User>,
+            private readonly jwtService: JwtService,
+            private readonly userService: UserService,
+        ) { }
+        async signup(createUserDto: CreateUserDto) {
+            const existingUser = await this.userModel.findOne({ email: createUserDto.email })
+            if (existingUser) {
+                throw new ConflictException('Email address is already in use')
+            }
 
-    async verifyEmail(verifyEmailDto: VerifyEmailDto) {
-        const user = await this.userModel.findOne({ verificationToken: verifyEmailDto.verificationToken })
+            const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+            const verificationToken = this.generateToken();
+            const { email, firstName, lastName } = createUserDto
 
-        if (!user) {
-            throw new BadRequestException('Invalid verification token');
-        }
-
-        user.isEmailVerified = true;
-        user.verificationToken = null
-
-        await user.save()
-
-        return { message: "Your email is verified", user };
-    }
-
-    async resendVerification(email: string) {
-        const user = await this.userModel.findOne({ email })
-        if (!user) {
-            throw new BadRequestException('User not found');
-        }
-        if (user.isEmailVerified) {
-            throw new BadRequestException('Email already verified');
-        }
-
-        const newToken = this.generateToken();
-        user.verificationToken = newToken;
-        await user.save()
-
-        return this.sendEmail({
-            to: email,
-            subject: 'Verify your Parker App Account',
-            html: `<p>Click <a href="${process.env.FRONTEND_URL}/verify-email?token=${newToken}">here</a> to verify your email.</p>`,
-        });
-    }
-
-    async login(userLoginDto: UserLoginDto) {
-        const user = await this.userModel.findOne({ email: userLoginDto.email });
-        if (!user) throw new UnauthorizedException('Invalid Email');
-
-        const isPasswordMatch = await bcrypt.compare(userLoginDto.password, user.password);
-        if (!isPasswordMatch) throw new UnauthorizedException('Invalid Password');
-
-        if (!user.isEmailVerified) {
-            this.resendVerification(userLoginDto.email)
-            throw new ForbiddenException('Please verify your email first');
-        }
-
-        const payload = {
-            sub: user._id,
-            role: user.role,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName
-        };
-        const accessToken = await this.jwtService.signAsync(payload);
-
-        return { accessToken, user };
-    }
-
-    private generateToken(): string {
-        return randomBytes(32).toString('hex');
-    }
-
-    async handleGoogleLogin(googleUser: any) {
-        const { email, name, picture } = googleUser;
-
-        let user = await this.userModel.findOne({ email })
-
-        if (!user) {
-            user = await this.userService.createGoogleUser({
+            const user = await this.userModel.create({
+                firstName,
+                lastName,
                 email,
-                name,
-                picture,
-                provider: 'google',
+                password: hashedPassword,
+                verificationToken
+            })
+            // Send Email verification
+            await this.sendEmail({
+                to: createUserDto.email,
+                subject: 'Verify your Parker App Account',
+                html: `<p>Click <a href="${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}">here</a> to verify your email.</p>`,
             });
         }
 
-        const payload = { sub: user._id, role: user.role };
-        const accessToken = await this.jwtService.signAsync(payload);
+        async verifyEmail(verifyEmailDto: VerifyEmailDto) {
+            const user = await this.userModel.findOne({ verificationToken: verifyEmailDto.verificationToken })
 
-        return { accessToken };
-    }
+            if (!user) {
+                throw new BadRequestException('Invalid verification token');
+            }
 
-    async sendPasswordResetEmail(email: string) {
-        const user = await this.userModel.findOne({ email });
-        if (!user) {
-            throw new UnauthorizedException('Invalid Email');
+            user.isEmailVerified = true;
+            user.verificationToken = null
+
+            await user.save()
+
+            return { message: "Your email is verified", user };
         }
 
-        const token = this.generateToken()
-        user.resetToken = token;
-        await user.save();
+        async resendVerification(email: string) {
+            const user = await this.userModel.findOne({ email })
+            if (!user) {
+                throw new BadRequestException('User not found');
+            }
+            if (user.isEmailVerified) {
+                throw new BadRequestException('Email already verified');
+            }
 
-        const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
-        this.sendEmail({
-            to: email,
-            subject: 'Password Reset for Parker App',
-            html: `<p>Click <a href="${resetLink}">here</a> to reset your password.</p>
-                   <p>This link will expire in a short period.</p>`,
-        });
+            const newToken = this.generateToken();
+            user.verificationToken = newToken;
+            await user.save()
 
-        return { message: 'Reset link has been sent.' };
-    }
-
-    private async sendEmail(options: EmailOptions): Promise<{ message: string }> {
-        try {
-            await this.transporter.sendMail({
-                from: process.env.FROM_EMAIL,
-                ...options,
+            return this.sendEmail({
+                to: email,
+                subject: 'Verify your Parker App Account',
+                html: `<p>Click <a href="${process.env.FRONTEND_URL}/verify-email?token=${newToken}">here</a> to verify your email.</p>`,
             });
-            return { message: `Email sent to ${options.to}` };
-        } catch (error) {
-            console.error('Error sending email:', error);
-            throw new BadRequestException(`Failed to send email to ${options.to}`);
         }
+
+        async login(userLoginDto: UserLoginDto) {
+            const user = await this.userModel.findOne({ email: userLoginDto.email });
+            if (!user) throw new UnauthorizedException('Invalid Email');
+
+            const isPasswordMatch = await bcrypt.compare(userLoginDto.password, user.password);
+            if (!isPasswordMatch) throw new UnauthorizedException('Invalid Password');
+
+            if (!user.isEmailVerified) {
+                this.resendVerification(userLoginDto.email)
+                throw new ForbiddenException('Please verify your email first');
+            }
+
+            const payload = {
+                sub: user._id,
+                role: user.role,
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName
+            };
+            const accessToken = await this.jwtService.signAsync(payload);
+
+            return { accessToken, user };
+        }
+
+        private generateToken(): string {
+            return randomBytes(32).toString('hex');
+        }
+
+        async handleGoogleLogin(googleUser: any) {
+            const { email, name, picture } = googleUser;
+
+            let user = await this.userModel.findOne({ email })
+
+            if (!user) {
+                user = await this.userService.createGoogleUser({
+                    email,
+                    name,
+                    picture,
+                    provider: 'google',
+                });
+            }
+
+            const payload = { sub: user._id, role: user.role };
+            const accessToken = await this.jwtService.signAsync(payload);
+
+            return { accessToken };
+        }
+
+        async sendPasswordResetEmail(email: string) {
+            const user = await this.userModel.findOne({ email });
+            if (!user) {
+                throw new UnauthorizedException('Invalid Email');
+            }
+
+            const token = this.generateToken()
+            user.resetToken = token;
+            await user.save();
+
+            const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+            this.sendEmail({
+                to: email,
+                subject: 'Password Reset for Parker App',
+                html: `<p>Click <a href="${resetLink}">here</a> to reset your password.</p>
+                    <p>This link will expire in a short period.</p>`,
+            });
+
+            return { message: 'Reset link has been sent.' };
+        }
+
+        private async sendEmail(options: EmailOptions): Promise<{ message: string }> {
+            try {
+                await this.transporter.sendMail({
+                    from: process.env.FROM_EMAIL,
+                    ...options,
+                });
+                return { message: `Email sent to ${options.to}` };
+            } catch (error) {
+                console.error('Error sending email:', error);
+                throw new BadRequestException(`Failed to send email to ${options.to}`);
+            }
+        }
+
+        async resetPassword(token: string, newPassword: string) {
+            const user = await this.userModel.findOne({ resetToken: token });
+            if (!user) throw new BadRequestException('Invalid token');
+
+            user.password = await bcrypt.hash(newPassword, 10);
+            user.resetToken = null;
+            await user.save();
+
+            return { message: 'Password reset successful' };
+        }
+
     }
-
-    async resetPassword(token: string, newPassword: string) {
-        const user = await this.userModel.findOne({ resetToken: token });
-        if (!user) throw new BadRequestException('Invalid token');
-
-        user.password = await bcrypt.hash(newPassword, 10);
-        user.resetToken = null;
-        await user.save();
-
-        return { message: 'Password reset successful' };
-    }
-
-}
