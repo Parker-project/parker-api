@@ -37,22 +37,19 @@ export class AuthController {
     @ApiBody({ type: VerifyEmailDto })
     @ApiResponse({ status: 200, description: 'Email verified' })
     @ApiResponse({ status: 400, description: 'Invalid token' })
-    verifyEmail(@Body() verifyEmailDto: VerifyEmailDto, @Res() res: Response) {
+    async verifyEmail(@Body() verifyEmailDto: VerifyEmailDto, @Res() res: Response) {
         if (!verifyEmailDto.verificationToken) {
             throw new BadRequestException('Invalid verification token');
         }
-        const result = this.authService.verifyEmail(verifyEmailDto)
-        return res.status(200).json(result)
+        return await this.authService.verifyEmail(verifyEmailDto)
     }
 
     @Patch('resend-verification')
     @ApiOperation({ summary: 'Resend email verification link' })
     @ApiBody({ type: MailDto })
     @ApiResponse({ status: 200, description: 'Email sent' })
-    resendVerificationEmail(@Body() resendVerification: MailDto, @Res() res: Response) {
-        const result = this.authService.resendVerification(resendVerification.email)
-        return res.status(200).json(result)
-
+    async resendVerificationEmail(@Body() resendVerification: MailDto, @Res() res: Response) {
+        return await this.authService.resendVerification(resendVerification.email)
     }
 
     @Post('login')
@@ -61,15 +58,17 @@ export class AuthController {
     @ApiResponse({ status: 200, description: 'Login success' })
     @ApiResponse({ status: 401, description: 'Invalid credentials' })
     async login(@Body() userLoginDto: UserLoginDto, @Res({ passthrough: true }) res: Response) {
-        const { accessToken, user } = await this.authService.login(userLoginDto);
+        const { accessToken, sanitizedUser } = await this.authService.login(userLoginDto);
 
+        console.log("🚀 ~ AuthController ~ login ~ accessToken, sanitizedUser:", accessToken, sanitizedUser)
         res.cookie('access_token', accessToken, {
             httpOnly: true,
             secure: true,
             sameSite: 'strict',
             maxAge: userLoginDto.rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000 // 30 days or 1 day
         })
-        return res.status(200).json({ message: 'Logged in successfully', user })
+        
+        return { message: 'Logged in successfully', user: sanitizedUser };
     }
 
     @UseGuards(JwtAuthGuard)
@@ -84,7 +83,7 @@ export class AuthController {
             sameSite: 'strict',
         });
 
-        return res.status(200).json({ message: 'Logged out successfully' })
+        return { message: 'Logged out successfully' }
     }
 
     @UseGuards(AuthGuard('google'))

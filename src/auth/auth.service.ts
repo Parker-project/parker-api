@@ -81,7 +81,7 @@
             user.verificationToken = newToken;
             await user.save()
 
-            return this.sendEmail({
+            return await this.sendEmail({
                 to: email,
                 subject: 'Verify your Parker App Account',
                 html: `<p>Click <a href="${process.env.FRONTEND_URL}/verify-email?token=${newToken}">here</a> to verify your email.</p>`,
@@ -100,6 +100,14 @@
                 throw new ForbiddenException('Please verify your email first');
             }
 
+            const sanitizedUser = {
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                role: user.role,
+                isEmailVerified: user.isEmailVerified
+            };
+
             const payload = {
                 sub: user._id,
                 role: user.role,
@@ -109,7 +117,7 @@
             };
             const accessToken = await this.jwtService.signAsync(payload);
 
-            return { accessToken, user };
+            return { accessToken, sanitizedUser };
         }
 
         private generateToken(): string {
