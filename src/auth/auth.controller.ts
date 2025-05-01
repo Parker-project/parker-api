@@ -60,7 +60,6 @@ export class AuthController {
     async login(@Body() userLoginDto: UserLoginDto, @Res({ passthrough: true }) res: Response) {
         const { accessToken, sanitizedUser } = await this.authService.login(userLoginDto);
 
-        console.log("🚀 ~ AuthController ~ login ~ accessToken, sanitizedUser:", accessToken, sanitizedUser)
         res.cookie('access_token', accessToken, {
             httpOnly: true,
             secure: true,
