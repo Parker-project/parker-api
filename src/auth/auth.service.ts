@@ -150,6 +150,7 @@ export class AuthService {
 
             const sanitizedUser = {
                 email: user.email,
+                id: user._id,
                 firstName: user.firstName,
                 lastName: user.lastName,
                 role: user.role,

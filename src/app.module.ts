@@ -7,15 +7,17 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { LoggerModule } from './common/logger/logger.module';
+import { ReportsModule } from './reports/reports.module';
 
 @Module({
-imports: [AuthModule, UserModule, MongooseModule.forRoot(process.env.MONGO_URI || 'mongodb://localhost:27017/parker'), LoggerModule,
-  ConfigModule.forRoot({
-    isGlobal: true, 
-    envFilePath: '.env', 
-  }) 
+  imports: [AuthModule, UserModule, MongooseModule.forRoot(process.env.MONGO_URI || 'mongodb://localhost:27017/parker'), LoggerModule, ReportsModule,
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
+    ReportsModule
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
