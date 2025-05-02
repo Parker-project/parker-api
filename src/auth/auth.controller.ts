@@ -1,8 +1,9 @@
-import { BadRequestException, Body, Controller, Get, LoggerService, Patch, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Inject, Logger, Patch, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Response, Request } from 'express';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 
 
 import { CreateUserDto } from './dto/create-user.dto';
@@ -10,9 +11,6 @@ import { VerifyEmailDto } from './dto/verify-email.dto';
 import { MailDto } from './dto/mail.dto';
 import { UserLoginDto } from './dto/user-login.dto';
 import { AuthService } from './auth.service';
-import { RolesGuard } from './guards/role.guard';
-import { Role } from 'src/common/enums/role.enum';
-import { Roles } from 'src/common/decorators/role.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { ResetPasswordDto } from './dto/reset-password.dto';
@@ -21,7 +19,9 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 @Controller('auth')
 @ApiTags('Auth')
 export class AuthController {
-    constructor(private readonly authService: AuthService, private readonly configService: ConfigService, private readonly logger: LoggerService) { }
+    constructor(private readonly authService: AuthService,
+        @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger,
+        private readonly configService: ConfigService) { }
 
     @Post('signup')
     @ApiOperation({ summary: 'Register a new user account' })
@@ -166,7 +166,8 @@ export class AuthController {
         } catch (error) {
             this.logger.error(`Password reset request error: ${error.message}`, error.stack, 'AuthController');
             throw error;
-        }    }
+        }
+    }
 
     @Post('reset-password')
     @ApiOperation({ summary: 'Reset password using reset token' })
@@ -179,5 +180,6 @@ export class AuthController {
         } catch (error) {
             this.logger.error(`Password reset error: ${error.message}`, error.stack, 'AuthController');
             throw error;
-        }    }
+        }
+    }
 }

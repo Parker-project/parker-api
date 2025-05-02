@@ -1,12 +1,13 @@
 // src/auth/strategies/jwt.strategy.ts
-import { Injectable, LoggerService } from '@nestjs/common';
+import { Inject, Injectable, Logger, LoggerService } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private readonly configService: ConfigService, private readonly logger: LoggerService
+  constructor(private readonly configService: ConfigService, @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([

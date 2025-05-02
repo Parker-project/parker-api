@@ -5,6 +5,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from 'src/user/user.schema';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { WinstonModule } from 'nest-winston';
+
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
 import { GoogleStrategy } from './strategies/google.strategy';
@@ -23,7 +25,8 @@ import { UserModule } from 'src/user/user.module';
       inject: [ConfigService],
     }),
     PassportModule,
-    UserModule
+    UserModule, 
+    WinstonModule
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, GoogleStrategy]

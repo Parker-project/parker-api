@@ -1,9 +1,10 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, LoggerService, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, Logger, LoggerService, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import * as nodemailer from 'nodemailer';
 import { JwtService } from '@nestjs/jwt';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { Model } from 'mongoose';
 
 import { CreateUserDto } from './dto/create-user.dto';
@@ -27,7 +28,7 @@ export class AuthService {
         @InjectModel(User.name) private userModel: Model<User>,
         private readonly jwtService: JwtService,
         private readonly userService: UserService,
-        private readonly logger: LoggerService
+        @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger,
     ) { }
     async signup(createUserDto: CreateUserDto) {
         this.logger.log(`Attempting to register user: ${createUserDto.email}`, 'AuthService');
