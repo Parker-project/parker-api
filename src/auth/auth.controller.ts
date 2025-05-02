@@ -44,17 +44,10 @@ export class AuthController {
     @ApiResponse({ status: 200, description: 'Email verified' })
     @ApiResponse({ status: 400, description: 'Invalid token' })
     async verifyEmail(@Body() verifyEmailDto: VerifyEmailDto, @Res() res: Response) {
-        try {
-            if (!verifyEmailDto.verificationToken) {
-                this.logger.warn('Verification attempt with missing token', 'AuthController');
-                throw new BadRequestException('Invalid verification token');
-            }
-            this.logger.log('Email verification request received', 'AuthController');
-            return await this.authService.verifyEmail(verifyEmailDto);
-        } catch (error) {
-            this.logger.error(`Email verification error: ${error.message}`, undefined, 'AuthController');
-            throw error;
+        if (!verifyEmailDto.verificationToken) {
+            throw new BadRequestException('Invalid verification token');
         }
+        return await this.authService.verifyEmail(verifyEmailDto);
     }
 
     @Patch('resend-verification')
@@ -62,13 +55,8 @@ export class AuthController {
     @ApiBody({ type: MailDto })
     @ApiResponse({ status: 200, description: 'Email sent' })
     async resendVerificationEmail(@Body() resendVerification: MailDto, @Res() res: Response) {
-        try {
-            this.logger.log(`Resend verification request for: ${resendVerification.email}`, 'AuthController');
-            return await this.authService.resendVerification(resendVerification.email);
-        } catch (error) {
-            this.logger.error(`Resend verification error: ${error.message}`, undefined, 'AuthController');
-            throw error;
-        }
+        return await this.authService.resendVerification(resendVerification.email);
+
     }
 
     @Post('login')
@@ -77,24 +65,17 @@ export class AuthController {
     @ApiResponse({ status: 200, description: 'Login success' })
     @ApiResponse({ status: 401, description: 'Invalid credentials' })
     async login(@Body() userLoginDto: UserLoginDto, @Res({ passthrough: true }) res: Response) {
-        try {
-            this.logger.log(`Login attempt for: ${userLoginDto.email}`, 'AuthController');
+        const { accessToken, sanitizedUser } = await this.authService.login(userLoginDto);
 
-            const { accessToken, sanitizedUser } = await this.authService.login(userLoginDto);
+        // Set cookie
+        res.cookie('access_token', accessToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'strict',
+            maxAge: userLoginDto.rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000 // 30 days or 1 day
+        });
 
-            // Set cookie
-            res.cookie('access_token', accessToken, {
-                httpOnly: true,
-                secure: true,
-                sameSite: 'strict',
-                maxAge: userLoginDto.rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000 // 30 days or 1 day
-            });
-
-            return { message: 'Logged in successfully', sanitizedUser };
-        } catch (error) {
-            this.logger.error(`Login error: ${error.message}`, undefined, 'AuthController');
-            throw error;
-        }
+        return { message: 'Logged in successfully', sanitizedUser };
     }
 
     @UseGuards(JwtAuthGuard)
@@ -103,20 +84,14 @@ export class AuthController {
     @ApiBody({ type: MailDto })
     @ApiResponse({ status: 200, description: 'Email sent' })
     logout(@Res({ passthrough: true }) res: Response) {
-        try {
-            this.logger.log('User logout request received', 'AuthController');
+        res.clearCookie('access_token', {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'strict',
+        });
 
-            res.clearCookie('access_token', {
-                httpOnly: true,
-                secure: true,
-                sameSite: 'strict',
-            });
+        return { message: 'Logged out successfully' };
 
-            return { message: 'Logged out successfully' };
-        } catch (error) {
-            this.logger.error(`Logout error: ${error.message}`, undefined, 'AuthController');
-            throw error;
-        }
     }
 
     @UseGuards(AuthGuard('google'))
@@ -132,28 +107,21 @@ export class AuthController {
     @ApiOperation({ summary: 'Google callback endpoint that sets access token cookie' })
     @ApiResponse({ status: 302, description: 'Redirect to frontend with user info' })
     async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
-        try {
-            this.logger.log('Google authentication callback received', 'AuthController');
-
-            if (!req.user) {
-                this.logger.warn('Google auth callback without user data', 'AuthController');
-                return res.redirect(`${this.configService.get('FRONTEND_URL')}/login?error=google_auth_failed`);
-            }
-
-            const { accessToken } = await this.authService.handleGoogleLogin(req.user as any);
-
-            // Set cookie
-            res.cookie('access_token', accessToken, {
-                httpOnly: true,
-                secure: true,
-                sameSite: 'strict',
-                maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
-            });
-            return res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
-        } catch (error) {
-            this.logger.error(`Google auth error: ${error.message}`, undefined, 'AuthController');
-            return res.redirect(`${this.configService.get('FRONTEND_URL')}/login`);
+        if (!req.user) {
+            this.logger.warn('Google auth callback without user data', 'AuthController');
+            return res.redirect(`${this.configService.get('FRONTEND_URL')}/login?error=google_auth_failed`);
         }
+
+        const { accessToken } = await this.authService.handleGoogleLogin(req.user as any);
+
+        // Set cookie
+        res.cookie('access_token', accessToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'strict',
+            maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+        });
+        return res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
     }
 
     @Post('forgot-password')
@@ -164,7 +132,6 @@ export class AuthController {
             this.logger.log(`Password reset request for: ${dto.email}`, 'AuthController');
             return await this.authService.sendPasswordResetEmail(dto.email);
         } catch (error) {
-            this.logger.error(`Password reset request error: ${error.message}`, undefined, 'AuthController');
             throw error;
         }
     }
@@ -174,12 +141,7 @@ export class AuthController {
     @ApiResponse({ status: 200, description: 'Password reset successful' })
     @ApiResponse({ status: 400, description: 'Invalid or expired token' })
     async resetPassword(@Body() dto: ResetPasswordDto) {
-        try {
-            this.logger.log('Password reset attempt with token', 'AuthController');
-            return await this.authService.resetPassword(dto.token, dto.password);
-        } catch (error) {
-            this.logger.error(`Password reset error: ${error.message}`, undefined, 'AuthController');
-            throw error;
-        }
+        this.logger.log('Password reset attempt with token', 'AuthController');
+        return await this.authService.resetPassword(dto.token, dto.password);
     }
 }
