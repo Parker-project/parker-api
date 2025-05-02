@@ -1,11 +1,11 @@
-import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, Logger, LoggerService, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import * as nodemailer from 'nodemailer';
 import { JwtService } from '@nestjs/jwt';
-import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { Model } from 'mongoose';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 
 import { CreateUserDto } from './dto/create-user.dto';
 import { User, UserDocument } from '../user/user.schema'
@@ -28,8 +28,7 @@ export class AuthService {
         @InjectModel(User.name) private userModel: Model<User>,
         private readonly jwtService: JwtService,
         private readonly userService: UserService,
-        @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger,
-    ) { }
+        @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger) { }
     async signup(createUserDto: CreateUserDto) {
         this.logger.log(`Attempting to register user: ${createUserDto.email}`, 'AuthService');
 
@@ -63,7 +62,7 @@ export class AuthService {
 
             return { message: 'Registration successful. Please check your email to verify your account.' };
         } catch (error) {
-            this.logger.error(`Error creating user: ${error.message}`, error.stack, 'AuthService');
+            this.logger.error(`Error creating user: ${error.message}`, undefined, 'AuthService');
             throw error;
         }
     }
@@ -89,7 +88,7 @@ export class AuthService {
 
             return { message: "Your email is verified", user };
         } catch (error) {
-            this.logger.error(`Error verifying email: ${error.message}`, error.stack, 'AuthService');
+            this.logger.error(`Error verifying email: ${error.message}`, undefined, 'AuthService');
             throw error;
         }
     }
@@ -121,7 +120,7 @@ export class AuthService {
                 html: `<p>Click <a href="${process.env.FRONTEND_URL}/verify-email?token=${newToken}">here</a> to verify your email.</p>`,
             });
         } catch (error) {
-            this.logger.error(`Error resending verification: ${error.message}`, error.stack, 'AuthService');
+            this.logger.error(`Error resending verification: ${error.message}`, undefined, 'AuthService');
             throw error;
         }
     }
@@ -170,7 +169,7 @@ export class AuthService {
 
             return { accessToken, sanitizedUser };
         } catch (error) {
-            this.logger.error(`Error during login: ${error.message}`, error.stack, 'AuthService');
+            this.logger.error(`Error during login: ${error.message}`, undefined, 'AuthService');
             throw error;
         }
     }
@@ -201,7 +200,7 @@ export class AuthService {
 
             return { accessToken };
         } catch (error) {
-            this.logger.error(`Error during Google login: ${error.message}`, error.stack, 'AuthService');
+            this.logger.error(`Error during Google login: ${error.message}`, undefined, 'AuthService');
             throw error;
         }
     }
@@ -231,7 +230,7 @@ export class AuthService {
             return { message: 'Reset link has been sent.' };
         }
         catch (error) {
-            this.logger.error(`Error sending password reset email: ${error.message}`, error.stack, 'AuthService');
+            this.logger.error(`Error sending password reset email: ${error.message}`, undefined, 'AuthService');
             throw error;
         }
     }
@@ -246,7 +245,7 @@ export class AuthService {
             this.logger.log(`Email sent successfully to: ${options.to}`, 'AuthService');
             return { message: `Email sent to ${options.to}` };
         } catch (error) {
-            this.logger.error(`Error sending email to ${options.to}: ${error.message}`, error.stack, 'AuthService');
+            this.logger.error(`Error sending email to ${options.to}: ${error.message}`, undefined, 'AuthService');
             throw new BadRequestException(`Failed to send email to ${options.to}`);
         }
     }
@@ -268,7 +267,7 @@ export class AuthService {
             return { message: 'Password reset successful' };
         }
         catch (error) {
-            this.logger.error(`Error resetting password: ${error.message}`, error.stack, 'AuthService');
+            this.logger.error(`Error resetting password: ${error.message}`, undefined, 'AuthService');
             throw error;
         }
     }

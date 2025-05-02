@@ -1,16 +1,18 @@
-import { BadRequestException, Body, Controller, Get, Inject, Logger, Patch, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Inject, Logger, LoggerService, Patch, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Response, Request } from 'express';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 
-
 import { CreateUserDto } from './dto/create-user.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { MailDto } from './dto/mail.dto';
 import { UserLoginDto } from './dto/user-login.dto';
 import { AuthService } from './auth.service';
+import { RolesGuard } from './guards/role.guard';
+import { Role } from 'src/common/enums/role.enum';
+import { Roles } from 'src/common/decorators/role.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { ResetPasswordDto } from './dto/reset-password.dto';
@@ -19,9 +21,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 @Controller('auth')
 @ApiTags('Auth')
 export class AuthController {
-    constructor(private readonly authService: AuthService,
-        @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger,
-        private readonly configService: ConfigService) { }
+    constructor(private readonly authService: AuthService, private readonly configService: ConfigService, @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger) { }
 
     @Post('signup')
     @ApiOperation({ summary: 'Register a new user account' })
@@ -33,7 +33,7 @@ export class AuthController {
             this.logger.log('User signup request received', 'AuthController');
             return await this.authService.signup(createUserDTO);
         } catch (error) {
-            this.logger.error(`Signup error: ${error.message}`, error.stack, 'AuthController');
+            this.logger.error(`Signup error: ${error.message}`, undefined, 'AuthController');
             throw error;
         }
     }
@@ -52,7 +52,7 @@ export class AuthController {
             this.logger.log('Email verification request received', 'AuthController');
             return await this.authService.verifyEmail(verifyEmailDto);
         } catch (error) {
-            this.logger.error(`Email verification error: ${error.message}`, error.stack, 'AuthController');
+            this.logger.error(`Email verification error: ${error.message}`, undefined, 'AuthController');
             throw error;
         }
     }
@@ -66,7 +66,7 @@ export class AuthController {
             this.logger.log(`Resend verification request for: ${resendVerification.email}`, 'AuthController');
             return await this.authService.resendVerification(resendVerification.email);
         } catch (error) {
-            this.logger.error(`Resend verification error: ${error.message}`, error.stack, 'AuthController');
+            this.logger.error(`Resend verification error: ${error.message}`, undefined, 'AuthController');
             throw error;
         }
     }
@@ -92,7 +92,7 @@ export class AuthController {
 
             return { message: 'Logged in successfully', sanitizedUser };
         } catch (error) {
-            this.logger.error(`Login error: ${error.message}`, error.stack, 'AuthController');
+            this.logger.error(`Login error: ${error.message}`, undefined, 'AuthController');
             throw error;
         }
     }
@@ -114,7 +114,7 @@ export class AuthController {
 
             return { message: 'Logged out successfully' };
         } catch (error) {
-            this.logger.error(`Logout error: ${error.message}`, error.stack, 'AuthController');
+            this.logger.error(`Logout error: ${error.message}`, undefined, 'AuthController');
             throw error;
         }
     }
@@ -151,7 +151,7 @@ export class AuthController {
             });
             return res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
         } catch (error) {
-            this.logger.error(`Google auth error: ${error.message}`, error.stack, 'AuthController');
+            this.logger.error(`Google auth error: ${error.message}`, undefined, 'AuthController');
             return res.redirect(`${this.configService.get('FRONTEND_URL')}/login`);
         }
     }
@@ -164,7 +164,7 @@ export class AuthController {
             this.logger.log(`Password reset request for: ${dto.email}`, 'AuthController');
             return await this.authService.sendPasswordResetEmail(dto.email);
         } catch (error) {
-            this.logger.error(`Password reset request error: ${error.message}`, error.stack, 'AuthController');
+            this.logger.error(`Password reset request error: ${error.message}`, undefined, 'AuthController');
             throw error;
         }
     }
@@ -178,7 +178,7 @@ export class AuthController {
             this.logger.log('Password reset attempt with token', 'AuthController');
             return await this.authService.resetPassword(dto.token, dto.password);
         } catch (error) {
-            this.logger.error(`Password reset error: ${error.message}`, error.stack, 'AuthController');
+            this.logger.error(`Password reset error: ${error.message}`, undefined, 'AuthController');
             throw error;
         }
     }

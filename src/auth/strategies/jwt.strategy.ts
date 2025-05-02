@@ -1,5 +1,5 @@
 // src/auth/strategies/jwt.strategy.ts
-import { Inject, Injectable, Logger, LoggerService } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
@@ -26,7 +26,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       return { email: payload.email, role: payload.role, firstName: payload.firstName, lastName: payload.lastName };
     }
     catch (error) {
-      this.logger.error(`Failed to validate user: ${error.message}`, error.stack);
+      this.logger.error(`Failed to validate user: ${error.message}`, undefined, 'JwtStrategy');
       throw error;
     }
   }
