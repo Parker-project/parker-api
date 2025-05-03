@@ -60,6 +60,7 @@ export class AuthController {
     }
 
     @Post('login')
+    @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Login user and set access token cookie' })
     @ApiBody({ type: UserLoginDto })
     @ApiResponse({ status: 200, description: 'Login success' })
@@ -70,7 +71,7 @@ export class AuthController {
         // Set cookie
         res.cookie('access_token', accessToken, {
             httpOnly: true,
-            secure: true,
+            secure: this.configService.getOrThrow<string>('NODE_ENV') === 'production',
             sameSite: 'strict',
             maxAge: userLoginDto.rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000 // 30 days or 1 day
         });

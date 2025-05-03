@@ -23,7 +23,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: any) {
     this.logger.log(`Validating user ${payload.email}`)
     try {
-      return { email: payload.email, role: payload.role, firstName: payload.firstName, lastName: payload.lastName };
+      return { id: payload.sub, email: payload.email, role: payload.role, firstName: payload.firstName };
     }
     catch (error) {
       this.logger.error(`Failed to validate user: ${error.message}`, undefined, 'JwtStrategy');

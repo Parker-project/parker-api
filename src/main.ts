@@ -4,10 +4,11 @@ import { ConfigService } from '@nestjs/config';
 import * as cookieParser from 'cookie-parser';
 import { WinstonModule } from 'nest-winston';
 import 'dotenv/config';
-import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';  
+import { ValidationPipe } from '@nestjs/common';
 
 import { AppModule } from './app.module';
 import { winstonLoggerConfig } from './common/logger/logger';
+
 
 
 async function bootstrap() {
@@ -15,6 +16,8 @@ async function bootstrap() {
     logger: WinstonModule.createLogger(winstonLoggerConfig)
   });
   app.setGlobalPrefix('api');
+
+  app.useGlobalPipes(new ValidationPipe());
 
   const configService = app.get(ConfigService);
   const config = new DocumentBuilder()
