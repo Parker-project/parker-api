@@ -24,15 +24,16 @@ export class ReportsService {
       throw new InternalServerErrorException('Failed to create report');
     }
   }
-  async getReport(reportId: string) {
+  async getReportsByUserId(userId: string) {
     try {
-      this.logger.log(`Fetching report details for ${reportId}`);
-      const report = await this.reportModel.findById(reportId);
-      this.logger.debug(`Found report ${reportId}`);
-      return report;
+      this.logger.log(`Fetching report details for ${userId}`);
+      const objectId = new Types.ObjectId(userId)
+      const reports = await this.reportModel.find({ userId: objectId });
+      this.logger.log(`Found reports for user: ${userId}`);
+      return reports || [];
     } catch (error) {
-      this.logger.error(`Failed to fetch report: ${error.message}`);
-      throw new InternalServerErrorException('Failed to fetch report');
+      this.logger.error(`Failed to fetch reports: ${error.message} for ${userId}`);
+      throw new InternalServerErrorException('Failed to fetch reports');
     }
   }
 
@@ -47,7 +48,7 @@ export class ReportsService {
 
       const reports = await query.exec();
       this.logger.debug(`Found ${reports.length} total reports`);
-      return reports;
+      return reports || [];
     } catch (error) {
       this.logger.error(`Failed to fetch all reports: ${error.message}`);
       throw new InternalServerErrorException('Failed to fetch all reports');
@@ -57,7 +58,7 @@ export class ReportsService {
   async updateReportStatus(reportId: string, status: string) {
     try {
       this.logger.log(`Updating status of report ${reportId} to ${status}`);
-      
+
       const updatedReport = await this.reportModel.findByIdAndUpdate(
         reportId,
         { status },

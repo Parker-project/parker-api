@@ -28,11 +28,11 @@ export class ReportsController {
     }
 
     @Get(':id')
-    @ApiOperation({ summary: 'Returns details for a single report' })
-    @ApiResponse({ status: 200, description: 'Report found', type: Report })
-    @ApiResponse({ status: 404, description: 'Report not found' })
-    async getReport(@Param('id') reportId: string) {
-        return this.reportsService.getReport(reportId);
+    @ApiOperation({ summary: 'Returns user reports' })
+    @ApiResponse({ status: 200, description: 'Reports found', type: Report })
+    @ApiResponse({ status: 404, description: 'Reports was not found' })
+    async getReportByUserId(@Param('id') reportId: string) {
+        return this.reportsService.getReportsByUserId(reportId);
     }
 
     @Get()
