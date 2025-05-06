@@ -8,7 +8,6 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { LoggerModule } from './common/logger/logger.module';
 import { ReportsModule } from './reports/reports.module';
-import { ReportsclearnestService } from './g/reportsclearnest/reportsclearnest.service';
 
 @Module({
   imports: [AuthModule, UserModule, MongooseModule.forRoot(process.env.MONGO_URI || 'mongodb://localhost:27017/parker'), LoggerModule, ReportsModule,
@@ -19,6 +18,6 @@ import { ReportsclearnestService } from './g/reportsclearnest/reportsclearnest.s
     ReportsModule
   ],
   controllers: [AppController],
-  providers: [AppService, ReportsclearnestService],
+  providers: [AppService],
 })
 export class AppModule { }
