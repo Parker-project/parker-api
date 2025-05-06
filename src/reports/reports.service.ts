@@ -25,28 +25,23 @@ export class ReportsService {
     }
   }
 
-  async getReport(reportId: string) {
+  async getReportsByUserId(userId: string) {
     try {
-      this.logger.log(`Fetching report details for ${reportId}`);
-      const report = await this.reportModel.findById(reportId);
-      this.logger.debug(`Found report ${reportId}`);
-      return report;
+      this.logger.log(`Fetching reports for user ${userId}`);
+      const objectId = new Types.ObjectId(userId);
+      const reports = await this.reportModel.find({ userId: objectId }).exec();
+      this.logger.debug(`Found ${reports.length} reports for user ${userId}`);
+      return reports;
     } catch (error) {
-      this.logger.error(`Failed to fetch report: ${error.message}`);
-      throw new InternalServerErrorException('Failed to fetch report');
+      this.logger.error(`Failed to fetch reports: ${error.message}`);
+      throw new InternalServerErrorException('Failed to fetch user reports');
     }
   }
 
-  async getAllReports(sort?: string) {
+  async getAllReports() {
     try {
-      this.logger.log(`Fetching all reports with sort: ${sort || 'none'}`);
-      const query = this.reportModel.find();
-
-      if (sort) {
-        query.sort(sort);
-      }
-
-      const reports = await query.exec();
+      this.logger.log(`Fetching all reports`);
+      const reports = await this.reportModel.find().exec();
       this.logger.debug(`Found ${reports.length} total reports`);
       return reports;
     } catch (error) {
@@ -58,7 +53,7 @@ export class ReportsService {
   async updateReportStatus(reportId: string, status: string) {
     try {
       this.logger.log(`Updating status of report ${reportId} to ${status}`);
-
+      
       const updatedReport = await this.reportModel.findByIdAndUpdate(
         reportId,
         { status },
