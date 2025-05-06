@@ -19,6 +19,17 @@ export class Report extends Document {
     default: ReportStatus.PENDING
   })
   status: ReportStatus;
+  
+  @Prop({
+    type: Object,
+    required: false,
+    default: null
+  })
+  location: {
+    latitude: number;
+    longitude: number;
+    address: string;
+  };
 }
 
 export const ReportSchema = SchemaFactory.createForClass(Report);
