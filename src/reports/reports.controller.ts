@@ -1,13 +1,16 @@
-import { Controller, Post, Body, Get, Param, Req, Patch, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiBody, ApiParam } from '@nestjs/swagger';
+import { Controller, Post, Body, Get, Param, Req, Patch, UseGuards, Query } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiQuery } from '@nestjs/swagger';
 
 import { ReportsService } from './reports.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import { Report } from './report.schema';
-import { ReportStatus } from 'src/common/enums/report-status.enum';
+import { ReportStatus } from 'src/common/enums/report-state.enum';
 import { Request } from 'express';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { UpdateReportStatusDto } from './dto/update-report-status.dto';
+import { RolesGuard } from 'src/auth/guards/role.guard';
+import { Roles } from 'src/common/decorators/role.decorator';
+import { Role } from 'src/common/enums/role.enum';
 
 @ApiTags('reports')
 @Controller('reports')
@@ -25,21 +28,23 @@ export class ReportsController {
     }
 
     @Get(':id')
-    @ApiOperation({ summary: 'Get a report by user ID' })
+    @ApiOperation({ summary: 'Returns details for a single report' })
     @ApiResponse({ status: 200, description: 'Report found', type: Report })
     @ApiResponse({ status: 404, description: 'Report not found' })
-    async getReport(@Param('id') userId: string) {
-        return this.reportsService.getReportsByUserId(userId);
+    async getReport(@Param('id') reportId: string) {
+        return this.reportsService.getReport(reportId);
     }
 
     @Get()
     @ApiOperation({ summary: 'Get all reports' })
+    @ApiQuery({ name: 'sort', required: false, description: 'Sort by field, e.g., "createdAt" or "-createdAt"' })
     @ApiResponse({ status: 200, description: 'List of all reports', type: [Report] })
-    getAll() {
-        return this.reportsService.getAllReports();
+    findAll(@Query('sort') sort?: string) {
+        return this.reportsService.getAllReports(sort);
     }
 
-
+    @UseGuards(RolesGuard)
+    @Roles(Role.Admin, Role.Inspector, Role.SuperInspector)
     @ApiResponse({ status: 200, description: 'Report status updated', type: Report })
     @ApiResponse({ status: 404, description: 'Report not found' })
     @Patch(':id/status')
