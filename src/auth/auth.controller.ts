@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Inject, Logger, LoggerService, Patch, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Inject, Logger, LoggerService, Param, Patch, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -38,16 +38,23 @@ export class AuthController {
         }
     }
 
-    @Patch('verify-email')
-    @ApiOperation({ summary: 'Verify user email with token' })
-    @ApiBody({ type: VerifyEmailDto })
-    @ApiResponse({ status: 200, description: 'Email verified' })
-    @ApiResponse({ status: 400, description: 'Invalid token' })
-    async verifyEmail(@Body() verifyEmailDto: VerifyEmailDto, @Res() res: Response) {
-        if (!verifyEmailDto.verificationToken) {
-            throw new BadRequestException('Invalid verification token');
+    @Get('verify-email/:token')
+    @ApiOperation({ summary: 'Verify user email directly from link' })
+    @ApiResponse({ status: 200, description: 'Email verified and redirected to login' })
+    async verifyEmailDirectly(@Param('token') token: string, @Res() res: Response) {
+        try {
+            this.logger.log(`Email verification request with token: ${token.substring(0, 8)}...`, 'AuthController');
+
+            await this.authService.verifyEmailDirect(token);
+
+            // Redirect to login page with success message
+            return res.redirect(`${this.configService.get('FRONTEND_URL')}/login?verified=true`);
+        } catch (error) {
+            this.logger.error(`Direct email verification failed: ${error.message}`, undefined, 'AuthController');
+
+            // Redirect to login page with error message
+            return res.redirect(`${this.configService.get('FRONTEND_URL')}/login?verified=false}`);
         }
-        return await this.authService.verifyEmail(verifyEmailDto);
     }
 
     @Patch('resend-verification')

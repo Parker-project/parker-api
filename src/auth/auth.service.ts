@@ -32,24 +32,24 @@ export class AuthService {
     async signup(createUserDto: CreateUserDto) {
         this.logger.log(`Attempting to register user: ${createUserDto.email}`, 'AuthService');
 
-        const existingUser = await this.userModel.findOne({ email: createUserDto.email })
-        if (existingUser) {
-            this.logger.warn(`Registration failed: Email already exists: ${createUserDto.email}`, 'AuthService');
-            throw new ConflictException('Email address is already in use')
-        }
-
-        const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-        const verificationToken = this.generateToken();
-        const { email, firstName, lastName } = createUserDto
-
         try {
-            const newUser = await this.userModel.create({
+            const existingUser = await this.userModel.findOne({ email: createUserDto.email })
+            if (existingUser) {
+                this.logger.warn(`Registration failed: Email already exists: ${createUserDto.email}`, 'AuthService');
+                throw new ConflictException('Email address is already in use')
+            }
+
+            const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+            const verificationToken = this.generateToken();
+            const { email, firstName, lastName } = createUserDto
+
+            await this.userModel.create({
                 firstName,
                 lastName,
                 email,
                 password: hashedPassword,
                 verificationToken
-            });
+            })
 
             this.logger.log(`User registered successfully: ${email}`, 'AuthService');
 
@@ -57,9 +57,8 @@ export class AuthService {
             await this.sendEmail({
                 to: createUserDto.email,
                 subject: 'Verify your Parker App Account',
-                html: `<p>Click <a href="${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}">here</a> to verify your email.</p>`,
-            });
-
+                html: `<p>Click <a href="${process.env.BACKEND_URL}/auth/verify-email/${verificationToken}">here</a> to verify your email.</p>`,
+              });
             return { message: 'Registration successful. Please check your email to verify your account.' };
         } catch (error) {
             this.logger.error(`Error creating user: ${error.message}`, undefined, 'AuthService');
@@ -67,31 +66,30 @@ export class AuthService {
         }
     }
 
-    async verifyEmail(verifyEmailDto: VerifyEmailDto) {
-        this.logger.log(`Verifying email with token: ${verifyEmailDto.verificationToken.substring(0, 8)}...`, 'AuthService');
-
+    async verifyEmailDirect(verificationToken: string) {
+        this.logger.log(`Directly verifying email with token: ${verificationToken.substring(0, 8)}...`, 'AuthService');
+      
         try {
-
-            const user = await this.userModel.findOne({ verificationToken: verifyEmailDto.verificationToken })
-
-            if (!user) {
-                this.logger.warn(`Invalid verification token: ${verifyEmailDto.verificationToken.substring(0, 8)}...`, 'AuthService');
-                throw new BadRequestException('Invalid verification token');
-            }
-
-            user.isEmailVerified = true;
-            user.verificationToken = null
-
-            await user.save()
-
-            this.logger.log(`Email verified successfully for user: ${user.email}`, 'AuthService');
-
-            return { message: "Your email is verified", user };
+          const user = await this.userModel.findOne({ verificationToken });
+      
+          if (!user) {
+            this.logger.warn(`Invalid verification token: ${verificationToken.substring(0, 8)}...`, 'AuthService');
+            throw new BadRequestException('Invalid verification token');
+          }
+      
+          user.isEmailVerified = true;
+          user.verificationToken = null;
+      
+          await user.save();
+      
+          this.logger.log(`Email verified successfully for user: ${user.email}`, 'AuthService');
+      
+          return { message: "Your email is verified", user };
         } catch (error) {
-            this.logger.error(`Error verifying email: ${error.message}`, undefined, 'AuthService');
-            throw error;
+          this.logger.error(`Error directly verifying email: ${error.message}`, undefined, 'AuthService');
+          throw error;
         }
-    }
+      }
 
     async resendVerification(email: string) {
         this.logger.log(`Resending verification email to: ${email}`, 'AuthService');
@@ -117,7 +115,7 @@ export class AuthService {
             return await this.sendEmail({
                 to: email,
                 subject: 'Verify your Parker App Account',
-                html: `<p>Click <a href="${process.env.FRONTEND_URL}/verify-email?token=${newToken}">here</a> to verify your email.</p>`,
+                html: `<p>Click <a href="${process.env.BACKEND_URL}/auth/verify-email/${newToken}">here</a> to verify your email.</p>`,
             });
         } catch (error) {
             this.logger.error(`Error resending verification: ${error.message}`, undefined, 'AuthService');
