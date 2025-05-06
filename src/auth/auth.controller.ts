@@ -60,7 +60,6 @@ export class AuthController {
     }
 
     @Post('login')
-    @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Login user and set access token cookie' })
     @ApiBody({ type: UserLoginDto })
     @ApiResponse({ status: 200, description: 'Login success' })
