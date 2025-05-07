@@ -14,11 +14,11 @@ import { Role } from 'src/common/enums/role.enum';
 
 @ApiTags('reports')
 @Controller('reports')
+@UseGuards(JwtAuthGuard)
 export class ReportsController {
     constructor(private readonly reportsService: ReportsService) { }
 
     @Post()
-    @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Create a new report (can be anonymous)' })
     @ApiResponse({ status: 201, description: 'Report created successfully', type: Report })
     @ApiResponse({ status: 400, description: 'Invalid input' })
