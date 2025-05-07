@@ -221,7 +221,7 @@ export class AuthService {
             user.resetToken = token;
             await user.save();
 
-            const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+            const resetLink = `${process.env.BACKEND_URL}/auth/verify-email/${token}`;
             this.sendEmail({
                 to: email,
                 subject: 'Password Reset for Parker App',
