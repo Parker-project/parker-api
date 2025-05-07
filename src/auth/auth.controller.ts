@@ -93,7 +93,7 @@ export class AuthController {
     logout(@Res({ passthrough: true }) res: Response) {
         res.clearCookie('access_token', {
             httpOnly: true,
-            secure: true,
+            secure: this.configService.get('NODE_ENV') === 'production',
             sameSite: 'strict',
         });
 
@@ -124,7 +124,7 @@ export class AuthController {
         // Set cookie
         res.cookie('access_token', accessToken, {
             httpOnly: true,
-            secure: true,
+            secure: this.configService.get('NODE_ENV') === 'production',
             sameSite: 'strict',
             maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
         });
