@@ -6,6 +6,7 @@ import { Inject } from '@nestjs/common';
 
 import { Report } from './report.schema';
 import { CreateReportDto } from './dto/create-report.dto';
+import { ReportStatus } from 'src/common/enums/report-state.enum';
 @Injectable()
 export class ReportsService {
   constructor(
@@ -55,7 +56,7 @@ export class ReportsService {
     }
   }
 
-  async updateReportStatus(reportId: string, status: string) {
+  async updateReportStatus(reportId: string, status: ReportStatus) {
     try {
       this.logger.log(`Updating status of report ${reportId} to ${status}`);
 
@@ -75,6 +76,49 @@ export class ReportsService {
     } catch (error) {
       this.logger.error(`Failed to update report status: ${error.message}`);
       throw new InternalServerErrorException('Failed to update report status');
+    }
+  }
+
+  async getReportsByStatus(status: ReportStatus) {
+    try {
+      this.logger.log(`Fetching reports with status: ${status}`);
+      const reports = await this.reportModel.find({ status });
+      this.logger.debug(`Found ${reports.length} reports with status ${status}`);
+      return reports || [];
+    } catch (error) {
+      this.logger.error(`Failed to fetch reports by status: ${error.message}`);
+      throw new InternalServerErrorException('Failed to fetch reports by status');
+    }
+  }
+
+  async deleteReport(reportId: string) {
+    try {
+      this.logger.log(`Deleting report ${reportId}`);
+      const deletedReport = await this.reportModel.findByIdAndDelete(reportId);
+
+      if (deletedReport) {
+        this.logger.debug(`Deleted report ${reportId} successfully`);
+        return { message: 'Report deleted successfully' };
+      } else {
+        this.logger.warn(`Report ${reportId} not found for deletion`);
+        return { message: 'Report not found' };
+      }
+    } catch (error) {
+      this.logger.error(`Failed to delete report: ${error.message}`);
+      throw new InternalServerErrorException('Failed to delete report');
+    }
+  }
+
+  async getReportsByDate(sortOrder: 'asc' | 'desc' = 'desc') {
+    try {
+      this.logger.log(`Fetching reports sorted by date ${sortOrder}`);
+      const sortDirection = sortOrder === 'asc' ? 1 : -1;
+      const reports = await this.reportModel.find().sort({ createdAt: sortDirection });
+      this.logger.debug(`Found ${reports.length} reports sorted by date`);
+      return reports || [];
+    } catch (error) {
+      this.logger.error(`Failed to fetch reports by date: ${error.message}`);
+      throw new InternalServerErrorException('Failed to fetch reports by date');
     }
   }
 }

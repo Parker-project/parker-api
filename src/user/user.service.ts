@@ -16,4 +16,8 @@ export class UserService {
 
         return newUser.save();
     }
+
+    async findUserByEmail(email: string) {
+        return this.userModel.findOne({ email }).select('-password -verificationToken');
+    }
 }

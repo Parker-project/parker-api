@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param, Req, Patch, UseGuards, Query } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Req, Patch, UseGuards, Query, Delete } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiQuery } from '@nestjs/swagger';
 
 import { ReportsService } from './reports.service';
@@ -45,6 +45,7 @@ export class ReportsController {
 
     @UseGuards(RolesGuard)
     @Roles(Role.Admin, Role.Inspector, Role.SuperInspector)
+    @ApiOperation({ summary: 'Update the status of a report' })
     @ApiResponse({ status: 200, description: 'Report status updated', type: Report })
     @ApiResponse({ status: 404, description: 'Report not found' })
     @Patch(':id/status')
@@ -53,5 +54,35 @@ export class ReportsController {
         @Body() updateReportStatusDto: UpdateReportStatusDto,
     ) {
         return this.reportsService.updateReportStatus(id, updateReportStatusDto.status);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Get('status/:status')
+    @ApiOperation({ summary: 'Get reports by status' })
+    @ApiParam({ name: 'status', enum: ReportStatus, description: 'Status of the reports to fetch' })
+    @ApiResponse({ status: 200, description: 'List of reports with specified status' })
+    getReportsByStatus(@Param('status') status: ReportStatus) {
+        return this.reportsService.getReportsByStatus(status);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Delete(':id')
+    @UseGuards(RolesGuard)
+    @Roles(Role.Admin, Role.SuperInspector)
+    @ApiOperation({ summary: 'Delete a report' })
+    @ApiParam({ name: 'id', description: 'Report ID to delete' })
+    @ApiResponse({ status: 200, description: 'Report deleted successfully' })
+    @ApiResponse({ status: 404, description: 'Report not found' })
+    deleteReport(@Param('id') id: string) {
+        return this.reportsService.deleteReport(id);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Get('sort/date')
+    @ApiOperation({ summary: 'Get reports sorted by date' })
+    @ApiQuery({ name: 'order', enum: ['asc', 'desc'], required: false, description: 'Sort order (asc/desc)' })
+    @ApiResponse({ status: 200, description: 'List of reports sorted by date' })
+    getReportsByDate(@Query('order') order: 'asc' | 'desc' = 'desc') {
+        return this.reportsService.getReportsByDate(order);
     }
 }
