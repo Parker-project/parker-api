@@ -78,7 +78,6 @@ export class OcrService {
       );
 
       const results = data.results;
-      console.log(results);
       if (!results || results.length === 0) {
         this.logger.warn('No license plates detected in the image');
         return {

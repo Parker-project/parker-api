@@ -5,10 +5,7 @@ import { ConfigModule } from './config/config.module';
 import { OcrModule } from './ocr/ocr.module';
 
 @Module({
-  imports: [
-    ConfigModule,
-    OcrModule,
-  ],
+  imports: [ConfigModule, OcrModule],
   controllers: [AppController],
   providers: [AppService],
 })
