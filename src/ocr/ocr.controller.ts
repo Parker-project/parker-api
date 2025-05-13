@@ -34,7 +34,7 @@ export class OcrController {
       }),
       fileFilter: (req, file, cb) => {
         // Accept only image files
-        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png)$/)) {
           return cb(
             new BadRequestException('Only image files are allowed!'),
             false,
@@ -62,13 +62,9 @@ export class OcrController {
         file.path,
       );
 
-      // Return the recognized text with enhanced response
       return {
         success: true,
-        licensePlate: {
-          text: licensePlate.results[0].plate,
-          isConfident: licensePlate.results[0].score > 0.8,
-        },
+        licensePlate,
         originalFile: file.originalname,
         timestamp: new Date().toISOString(),
       };
