@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { LoggerModule } from './common/logger/logger.module';
 import { ReportsModule } from './reports/reports.module';
+import { OcrModule } from './ocr/ocr.module';
 
 @Module({
   imports: [AuthModule, UserModule, MongooseModule.forRoot(process.env.MONGO_URI || 'mongodb://localhost:27017/parker'), LoggerModule, ReportsModule,
@@ -15,7 +16,8 @@ import { ReportsModule } from './reports/reports.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    ReportsModule
+    ReportsModule,
+    OcrModule,
   ],
   controllers: [AppController],
   providers: [AppService],
