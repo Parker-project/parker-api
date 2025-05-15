@@ -242,12 +242,12 @@ export class AuthService {
             user.resetToken = token;
             await user.save();
 
-            const resetLink = `${process.env.BACKEND_URL}/auth/verify-email/${token}`;
+            const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
             this.sendEmail({
                 to: email,
                 subject: 'Password Reset for Parker App',
                 html: `<p>Click <a href="${resetLink}">here</a> to reset your password.</p>
-                <p>This link will expire in a short period.</p>`,
+                <p>This link will expire in a short period of time.</p>`,
             });
 
             this.logger.log(`Password reset email sent to: ${email}`, 'AuthService');

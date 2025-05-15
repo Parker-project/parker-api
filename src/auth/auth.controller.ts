@@ -142,7 +142,7 @@ export class AuthController {
         }
     }
 
-    @Post('forgot-password')
+    @Post('request-password-reset')
     @ApiOperation({ summary: 'Send password reset email' })
     @ApiResponse({ status: 200, description: 'Reset link sent if user exists' })
     async forgotPassword(@Body() dto: MailDto) {
@@ -154,7 +154,7 @@ export class AuthController {
         }
     }
 
-    @Post('reset-password')
+    @Patch('reset-password')
     @ApiOperation({ summary: 'Reset password using reset token' })
     @ApiResponse({ status: 200, description: 'Password reset successful' })
     @ApiResponse({ status: 400, description: 'Invalid or expired token' })
