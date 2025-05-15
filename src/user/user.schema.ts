@@ -10,9 +10,12 @@ export class User extends Document {
   @Prop({ required: true, unique: true })
   email: string;
 
-  @Prop({ required: true })
+  @Prop({
+    required: function () {
+      return this.provider !== 'google';
+    }
+  })
   password: string;
-
   @Prop({ enum: Role, default: Role.User })
   role: Role;
 

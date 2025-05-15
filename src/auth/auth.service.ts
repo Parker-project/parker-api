@@ -13,6 +13,7 @@ import { VerifyEmailDto } from './dto/verify-email.dto';
 import { UserLoginDto } from './dto/user-login.dto';
 import { UserService } from '../user/user.service';
 import { EmailOptions } from '../common/interfaces/email-options.interface';
+import { Role } from 'src/common/enums/role.enum';
 
 @Injectable()
 export class AuthService {
@@ -58,7 +59,7 @@ export class AuthService {
                 to: createUserDto.email,
                 subject: 'Verify your Parker App Account',
                 html: `<p>Click <a href="${process.env.BACKEND_URL}/auth/verify-email/${verificationToken}">here</a> to verify your email.</p>`,
-              });
+            });
             return { message: 'Registration successful. Please check your email to verify your account.' };
         } catch (error) {
             this.logger.error(`Error creating user: ${error.message}`, undefined, 'AuthService');
@@ -68,28 +69,28 @@ export class AuthService {
 
     async verifyEmailDirect(verificationToken: string) {
         this.logger.log(`Directly verifying email with token: ${verificationToken.substring(0, 8)}...`, 'AuthService');
-      
+
         try {
-          const user = await this.userModel.findOne({ verificationToken });
-      
-          if (!user) {
-            this.logger.warn(`Invalid verification token: ${verificationToken.substring(0, 8)}...`, 'AuthService');
-            throw new BadRequestException('Invalid verification token');
-          }
-      
-          user.isEmailVerified = true;
-          user.verificationToken = null;
-      
-          await user.save();
-      
-          this.logger.log(`Email verified successfully for user: ${user.email}`, 'AuthService');
-      
-          return { message: "Your email is verified", user };
+            const user = await this.userModel.findOne({ verificationToken });
+
+            if (!user) {
+                this.logger.warn(`Invalid verification token: ${verificationToken.substring(0, 8)}...`, 'AuthService');
+                throw new BadRequestException('Invalid verification token');
+            }
+
+            user.isEmailVerified = true;
+            user.verificationToken = null;
+
+            await user.save();
+
+            this.logger.log(`Email verified successfully for user: ${user.email}`, 'AuthService');
+
+            return { message: "Your email is verified", user };
         } catch (error) {
-          this.logger.error(`Error directly verifying email: ${error.message}`, undefined, 'AuthService');
-          throw error;
+            this.logger.error(`Error directly verifying email: ${error.message}`, undefined, 'AuthService');
+            throw error;
         }
-      }
+    }
 
     async resendVerification(email: string) {
         this.logger.log(`Resending verification email to: ${email}`, 'AuthService');
@@ -160,6 +161,7 @@ export class AuthService {
                 email: user.email,
                 role: user.role,
                 firstName: user.firstName,
+                isEmailVerified: user.isEmailVerified
             };
             const accessToken = await this.jwtService.signAsync(payload);
 
@@ -180,28 +182,47 @@ export class AuthService {
         this.logger.log(`Google login attempt for: ${googleUser.email}`, 'AuthService');
 
         try {
-            const { email, name } = googleUser;
-            let user = await this.userModel.findOne({ email })
+            let user = await this.userModel.findOne({ email: googleUser.email }).exec();
 
             if (!user) {
-                this.logger.log(`Creating new Google user: ${email}`, 'AuthService');
+                this.logger.log(`Creating new Google user: ${googleUser.email}`, 'AuthService');
                 user = await this.userService.createGoogleUser({
-                    email,
-                    name,
+                    email: googleUser.email,
+                    firstName: googleUser.given_name || googleUser.name,
+                    lastName: googleUser.family_name || '',
                     provider: 'google',
+                    role: Role.User, // Default role
+                    isEmailVerified: true, // Google emails are verified
                 });
             }
+            else {
+                user.isEmailVerified = true;
+                await user.save();
+            }
 
+            // Match the same sanitized user structure as regular login
+            const sanitizedUser = {
+                email: user.email,
+                id: user._id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                role: user.role,
+                isEmailVerified: user.isEmailVerified
+            };
+
+            // Match the same payload structure as regular login
             const payload = {
                 sub: user.id,
                 email: user.email,
                 role: user.role,
                 firstName: user.firstName,
+                isEmailVerified: user.isEmailVerified,
             };
             const accessToken = await this.jwtService.signAsync(payload);
-            this.logger.log(`Google user logged in successfully: ${email}`, 'AuthService');
 
-            return { accessToken };
+            this.logger.log(`Google user logged in successfully: ${googleUser.email}`, 'AuthService');
+
+            return { accessToken, sanitizedUser };
         } catch (error) {
             this.logger.error(`Error during Google login: ${error.message}`, undefined, 'AuthService');
             throw error;

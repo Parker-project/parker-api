@@ -2,19 +2,22 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { User, UserDocument } from './user.schema';
 import { Model } from 'mongoose';
+import { Role } from '../common/enums/role.enum';
+import { GoogleUserDto } from './dto/googleUser.dto';
 
 @Injectable()
 export class UserService {
     constructor(@InjectModel(User.name) private userModel: Model<User>,
     ) { }
-    async createGoogleUser(googleData: { email: string; name: string; provider: string }) {
-        const newUser = new this.userModel({
-            email: googleData.email,
-            name: googleData.name,
-            provider: googleData.provider,
+    async createGoogleUser(userData: GoogleUserDto) {
+        return this.userModel.create({
+            email: userData.email,
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            provider: userData.provider,
+            isEmailVerified: userData.isEmailVerified,
+            role: Role.User, 
         });
-
-        return newUser.save();
     }
 
     async findUserByEmail(email: string) {

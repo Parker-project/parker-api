@@ -96,9 +96,7 @@ export class AuthController {
             secure: this.configService.get('NODE_ENV') === 'production',
             sameSite: 'strict',
         });
-
         return { message: 'Logged out successfully' };
-
     }
 
     @UseGuards(AuthGuard('google'))
@@ -114,21 +112,34 @@ export class AuthController {
     @ApiOperation({ summary: 'Google callback endpoint that sets access token cookie' })
     @ApiResponse({ status: 302, description: 'Redirect to frontend with user info' })
     async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
-        if (!req.user) {
-            this.logger.warn('Google auth callback without user data', 'AuthController');
+        try {
+            this.logger.log('Google callback received', 'AuthController');
+
+            if (!req.user) {
+                this.logger.warn('Google auth callback without user data', 'AuthController');
+                return res.redirect(`${this.configService.get('FRONTEND_URL')}/login?error=google_auth_failed`);
+            }
+
+            this.logger.log(`Processing Google user data: ${JSON.stringify(req.user)}`, 'AuthController');
+            const { accessToken, sanitizedUser } = await this.authService.handleGoogleLogin(req.user as any);
+
+            // Set cookie
+            res.cookie('access_token', accessToken, {
+                httpOnly: true,
+                secure: this.configService.get('NODE_ENV') === 'production',
+                sameSite: 'strict',
+                maxAge: 30 * 24 * 60 * 60 * 1000
+            });
+
+            this.logger.log(`Google login successful for user: ${sanitizedUser.email}`, 'AuthController');
+
+            // Redirect to dashboard with success status
+            return res.redirect(`${this.configService.get('FRONTEND_URL')}/dashboard?login=success`);
+            //return { message: 'Logged in successfully', sanitizedUser };
+        } catch (error) {
+            this.logger.error(`Google auth callback error: ${error.message}`, error.stack, 'AuthController');
             return res.redirect(`${this.configService.get('FRONTEND_URL')}/login?error=google_auth_failed`);
         }
-
-        const { accessToken } = await this.authService.handleGoogleLogin(req.user as any);
-
-        // Set cookie
-        res.cookie('access_token', accessToken, {
-            httpOnly: true,
-            secure: this.configService.get('NODE_ENV') === 'production',
-            sameSite: 'strict',
-            maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
-        });
-        return res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
     }
 
     @Post('forgot-password')
