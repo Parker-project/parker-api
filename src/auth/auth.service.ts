@@ -58,7 +58,7 @@ export class AuthService {
                 to: createUserDto.email,
                 subject: 'Verify your Parker App Account',
                 html: `<p>Click <a href="${process.env.BACKEND_URL}/auth/verify-email/${verificationToken}">here</a> to verify your email.</p>`,
-              });
+            });
             return { message: 'Registration successful. Please check your email to verify your account.' };
         } catch (error) {
             this.logger.error(`Error creating user: ${error.message}`, undefined, 'AuthService');
@@ -68,28 +68,28 @@ export class AuthService {
 
     async verifyEmailDirect(verificationToken: string) {
         this.logger.log(`Directly verifying email with token: ${verificationToken.substring(0, 8)}...`, 'AuthService');
-      
+
         try {
-          const user = await this.userModel.findOne({ verificationToken });
-      
-          if (!user) {
-            this.logger.warn(`Invalid verification token: ${verificationToken.substring(0, 8)}...`, 'AuthService');
-            throw new BadRequestException('Invalid verification token');
-          }
-      
-          user.isEmailVerified = true;
-          user.verificationToken = null;
-      
-          await user.save();
-      
-          this.logger.log(`Email verified successfully for user: ${user.email}`, 'AuthService');
-      
-          return { message: "Your email is verified", user };
+            const user = await this.userModel.findOne({ verificationToken });
+
+            if (!user) {
+                this.logger.warn(`Invalid verification token: ${verificationToken.substring(0, 8)}...`, 'AuthService');
+                throw new BadRequestException('Invalid verification token');
+            }
+
+            user.isEmailVerified = true;
+            user.verificationToken = null;
+
+            await user.save();
+
+            this.logger.log(`Email verified successfully for user: ${user.email}`, 'AuthService');
+
+            return { message: "Your email is verified", user };
         } catch (error) {
-          this.logger.error(`Error directly verifying email: ${error.message}`, undefined, 'AuthService');
-          throw error;
+            this.logger.error(`Error directly verifying email: ${error.message}`, undefined, 'AuthService');
+            throw error;
         }
-      }
+    }
 
     async resendVerification(email: string) {
         this.logger.log(`Resending verification email to: ${email}`, 'AuthService');
@@ -180,18 +180,31 @@ export class AuthService {
         this.logger.log(`Google login attempt for: ${googleUser.email}`, 'AuthService');
 
         try {
-            const { email, name } = googleUser;
-            let user = await this.userModel.findOne({ email })
+            const { email, firstName, lastName } = googleUser;
+            let user = await this.userModel.findOne({ email });
 
             if (!user) {
                 this.logger.log(`Creating new Google user: ${email}`, 'AuthService');
                 user = await this.userService.createGoogleUser({
                     email,
-                    name,
+                    firstName,
+                    lastName,
                     provider: 'google',
+                    isEmailVerified: true, // Google emails are pre-verified
                 });
             }
 
+            // Match the same sanitized user structure as regular login
+            const sanitizedUser = {
+                email: user.email,
+                id: user._id,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                role: user.role,
+                isEmailVerified: user.isEmailVerified
+            };
+
+            // Match the same payload structure as regular login
             const payload = {
                 sub: user.id,
                 email: user.email,
@@ -199,9 +212,10 @@ export class AuthService {
                 firstName: user.firstName,
             };
             const accessToken = await this.jwtService.signAsync(payload);
+
             this.logger.log(`Google user logged in successfully: ${email}`, 'AuthService');
 
-            return { accessToken };
+            return { accessToken, sanitizedUser };
         } catch (error) {
             this.logger.error(`Error during Google login: ${error.message}`, undefined, 'AuthService');
             throw error;
