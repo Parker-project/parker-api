@@ -13,6 +13,7 @@ import { VerifyEmailDto } from './dto/verify-email.dto';
 import { UserLoginDto } from './dto/user-login.dto';
 import { UserService } from '../user/user.service';
 import { EmailOptions } from '../common/interfaces/email-options.interface';
+import { Role } from 'src/common/enums/role.enum';
 
 @Injectable()
 export class AuthService {
@@ -160,6 +161,7 @@ export class AuthService {
                 email: user.email,
                 role: user.role,
                 firstName: user.firstName,
+                isEmailVerified: user.isEmailVerified
             };
             const accessToken = await this.jwtService.signAsync(payload);
 
@@ -180,18 +182,22 @@ export class AuthService {
         this.logger.log(`Google login attempt for: ${googleUser.email}`, 'AuthService');
 
         try {
-            const { email, firstName, lastName } = googleUser;
-            let user = await this.userModel.findOne({ email });
+            let user = await this.userModel.findOne({ email: googleUser.email }).exec();
 
             if (!user) {
-                this.logger.log(`Creating new Google user: ${email}`, 'AuthService');
+                this.logger.log(`Creating new Google user: ${googleUser.email}`, 'AuthService');
                 user = await this.userService.createGoogleUser({
-                    email,
-                    firstName,
-                    lastName,
+                    email: googleUser.email,
+                    firstName: googleUser.given_name || googleUser.name,
+                    lastName: googleUser.family_name || '',
                     provider: 'google',
-                    isEmailVerified: true, // Google emails are pre-verified
+                    role: Role.User, // Default role
+                    isEmailVerified: true, // Google emails are verified
                 });
+            }
+            else {
+                user.isEmailVerified = true;
+                await user.save();
             }
 
             // Match the same sanitized user structure as regular login
@@ -210,10 +216,11 @@ export class AuthService {
                 email: user.email,
                 role: user.role,
                 firstName: user.firstName,
+                isEmailVerified: user.isEmailVerified,
             };
             const accessToken = await this.jwtService.signAsync(payload);
 
-            this.logger.log(`Google user logged in successfully: ${email}`, 'AuthService');
+            this.logger.log(`Google user logged in successfully: ${googleUser.email}`, 'AuthService');
 
             return { accessToken, sanitizedUser };
         } catch (error) {

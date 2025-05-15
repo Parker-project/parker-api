@@ -19,4 +19,8 @@ export class UserDto {
     @IsString()
     lastName: string
 
+    @ApiProperty({ example: true, description: 'Whether the user has verified their email' })
+    @IsBoolean()
+    isEmailVerified: boolean
+
 }
