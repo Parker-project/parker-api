@@ -1,3 +1,5 @@
+import { PlateRecognizerResponse } from '../ocr.service';
+
 /**
  * License plate recognition result interface
  */
@@ -25,7 +27,7 @@ export interface LicensePlateResponse {
   /**
    * The recognized license plate information
    */
-  licensePlate: LicensePlateResult;
+  licensePlate: PlateRecognizerResponse;
 
   /**
    * The original file name that was processed

@@ -4,36 +4,34 @@ import * as fs from 'fs';
 import * as FormData from 'form-data';
 import axios, { AxiosInstance } from 'axios';
 
-interface PlateRecognizerResponse {
-  results: Array<{
-    plate: string;
+export interface PlateRecognizerResponse {
+  plate: string;
+  score: number;
+  box: {
+    xmin: number;
+    ymin: number;
+    xmax: number;
+    ymax: number;
+  };
+  region: {
+    code: string;
     score: number;
+  };
+  candidates: Array<{
+    score: number;
+    plate: string;
+  }>;
+  dscore: number;
+  vehicle: {
+    score: number;
+    type: string;
     box: {
       xmin: number;
       ymin: number;
       xmax: number;
       ymax: number;
     };
-    region: {
-      code: string;
-      score: number;
-    };
-    candidates: Array<{
-      score: number;
-      plate: string;
-    }>;
-    dscore: number;
-    vehicle: {
-      score: number;
-      type: string;
-      box: {
-        xmin: number;
-        ymin: number;
-        xmax: number;
-        ymax: number;
-      };
-    };
-  }>;
+  };
 }
 
 @Injectable()
@@ -66,7 +64,7 @@ export class OcrService {
       const formData = new FormData();
       formData.append('upload', fs.createReadStream(imagePath));
 
-      const { data } = await axios.post<PlateRecognizerResponse>(
+      const { data } = await axios.post<{ results: PlateRecognizerResponse[] }>(
         this.apiUrl,
         formData,
         {
@@ -77,19 +75,16 @@ export class OcrService {
         },
       );
 
-      const results = data.results;
-      if (!results || results.length === 0) {
+      if (!data.results || data.results.length === 0) {
         this.logger.warn('No license plates detected in the image');
-        return {
-          results: [],
-        };
+        throw new Error('No license plates detected in the image');
       }
 
-      const bestResult = results.reduce((best, current) => {
+      const bestResult = data.results.reduce((best, current) => {
         return current.score > best.score ? current : best;
-      }, results[0]);
+      }, data.results[0]);
 
-      return bestResult as unknown as PlateRecognizerResponse;
+      return bestResult;
     } catch (error) {
       this.logger.error(
         `Error recognizing license plate: ${
@@ -97,9 +92,7 @@ export class OcrService {
         }`,
         error instanceof Error ? error.stack : undefined,
       );
-      return {
-        results: [],
-      };
+      throw error;
     }
   }
 }
