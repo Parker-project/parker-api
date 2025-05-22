@@ -274,16 +274,21 @@ export class AuthService {
         }
     }
 
-    async resetPassword(token: string, newPassword: string) {
-        this.logger.log(`Password reset attempt with token: ${token.substring(0, 8)}...`, 'AuthService');
+    async resetPassword(token: string, password: string) {
+        this.logger.log(`Password reset attempt with token: ${token?.substring(0, 8)}...`, 'AuthService');
         try {
+            if (!token || !password) {
+                this.logger.warn('Password reset failed: Missing token or new password', 'AuthService');
+                throw new BadRequestException('Token and new password are required');
+            }
+
             const user = await this.userModel.findOne({ resetToken: token });
             if (!user) {
                 this.logger.warn(`Password reset failed: Invalid token: ${token.substring(0, 8)}...`, 'AuthService');
                 throw new BadRequestException('Invalid token');
             }
 
-            user.password = await bcrypt.hash(newPassword, 10);
+            user.password = await bcrypt.hash(password, 10);
             user.resetToken = null;
             await user.save();
 
