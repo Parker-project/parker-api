@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Inject, Logger, LoggerService, Param, Patch, Post, Req, Res, UseGuards } from '@nestjs/common';
+import {  Body, Controller, Get, Inject, Logger, Param, Patch, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -6,13 +6,9 @@ import { Response, Request } from 'express';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 
 import { CreateUserDto } from './dto/create-user.dto';
-import { VerifyEmailDto } from './dto/verify-email.dto';
 import { MailDto } from './dto/mail.dto';
 import { UserLoginDto } from './dto/user-login.dto';
 import { AuthService } from './auth.service';
-import { RolesGuard } from './guards/role.guard';
-import { Role } from 'src/common/enums/role.enum';
-import { Roles } from 'src/common/decorators/role.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { ResetPasswordDto } from './dto/reset-password.dto';

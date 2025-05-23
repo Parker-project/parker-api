@@ -1,8 +1,9 @@
 import { Controller, Get, Req, UseGuards, Param, NotFoundException, Patch, Delete, Body } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { UserDto } from './dto/user.dto';
 import { Request } from 'express';
+
+import { UserDto } from './dto/user.dto';
 import { UserService } from './user.service';
 import { Role } from '../common/enums/role.enum';
 import { Roles } from 'src/common/decorators/role.decorator';
@@ -22,9 +23,9 @@ export class UserController {
     }
 
     @Get('email/:email')
-    @UseGuards(JwtAuthGuard)
     @UseGuards(RolesGuard)
     @Roles(Role.Admin)
+    @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Find user by email' })
     @ApiResponse({ status: 200, description: 'Returns the user details if found.', type: UserDto })
     @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -38,9 +39,9 @@ export class UserController {
     }
 
     @Get()
-    @UseGuards(JwtAuthGuard)
     @UseGuards(RolesGuard)
     @Roles(Role.Admin)
+    @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Get all users' })
     @ApiResponse({ status: 200, description: 'Returns a list of all users.', type: [UserDto] })
     @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -49,9 +50,9 @@ export class UserController {
     }
 
     @Get(':id')
-    @UseGuards(JwtAuthGuard)
     @UseGuards(RolesGuard)
     @Roles(Role.Admin)
+    @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Get user by ID' })
     @ApiResponse({ status: 200, description: 'Returns the user details if found.', type: UserDto })
     @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -61,9 +62,9 @@ export class UserController {
     }
 
     @Patch(':id/role')
-    @UseGuards(JwtAuthGuard)
     @UseGuards(RolesGuard)
     @Roles(Role.Admin)
+    @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Update user role' })
     @ApiResponse({ status: 200, description: 'User role updated successfully.', type: UserDto })
     @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -76,6 +77,8 @@ export class UserController {
     }
 
     @Delete(':id')
+    @UseGuards(RolesGuard)
+    @Roles(Role.Admin)
     @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Delete user' })
     @ApiResponse({ status: 200, description: 'User deleted successfully' })
