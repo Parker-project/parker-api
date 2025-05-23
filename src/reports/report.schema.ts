@@ -7,6 +7,9 @@ export class Report extends Document {
   @Prop({ type: Types.ObjectId, ref: 'User', required: false })
   userId: Types.ObjectId;
 
+  @Prop({ type: Types.ObjectId, ref: 'User', required: false })
+  inspectorId: Types.ObjectId;
+
   @Prop({ required: true })
   description: string;
 
@@ -19,7 +22,7 @@ export class Report extends Document {
     default: ReportStatus.PENDING
   })
   status: ReportStatus;
-  
+
   @Prop({
     type: Object,
     required: false,

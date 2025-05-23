@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
@@ -6,19 +6,62 @@ import { Inject } from '@nestjs/common';
 
 import { Report } from './report.schema';
 import { CreateReportDto } from './dto/create-report.dto';
-import { ReportStatus } from 'src/common/enums/report-state.enum';
+import { ReportStatus } from '../common/enums/report-state.enum';
+import { AssignInspectorDto } from './dto/assign-inspector.dto';
+import { User } from '../user/user.schema';
+import { Role } from '../common/enums/role.enum';
+
 @Injectable()
 export class ReportsService {
   constructor(
     @InjectModel(Report.name) private reportModel: Model<Report>,
+    @InjectModel(User.name) private userModel: Model<User>,
     @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger,
   ) { }
+
+  private async getRandomInspector(): Promise<string | null> {
+    try {
+      const inspectors = await this.userModel.find({
+        role: { $in: [Role.Inspector] }
+      }).select('_id');
+
+      if (inspectors.length === 0) {
+        this.logger.warn('No inspectors found in the system');
+        return null;
+      }
+
+      const randomIndex = Math.floor(Math.random() * inspectors.length);
+      const randomInspector = inspectors[randomIndex];
+
+      this.logger.debug(`Selected random inspector with ID: ${randomInspector._id}`);
+      return randomInspector._id as string;
+    } catch (error) {
+      this.logger.error(`Failed to get random inspector: ${error.message}`);
+      return null;
+    }
+  }
 
   async createReport(createReportDto: CreateReportDto, userId: string) {
     try {
       this.logger.log(`Creating report for ${userId ? userId : 'anonymous'}`);
-      const report = await this.reportModel.create({ ...createReportDto, userId: userId ? new Types.ObjectId(userId) : undefined });
-      this.logger.debug(`Created report with id: ${report._id}`);
+
+      const randomInspectorId = await this.getRandomInspector();
+
+      const reportData = {
+        ...createReportDto,
+        userId: userId ? new Types.ObjectId(userId) : undefined,
+        inspectorId: randomInspectorId,
+        status: randomInspectorId ? ReportStatus.REVIEWED : ReportStatus.PENDING
+      };
+
+      const report = await this.reportModel.create(reportData);
+
+      if (randomInspectorId) {
+        this.logger.debug(`Created report with id: ${report._id} and assigned random inspector: ${randomInspectorId}`);
+      } else {
+        this.logger.debug(`Created report with id: ${report._id} without inspector assignment`);
+      }
+
       return report;
     } catch (error) {
       this.logger.error(`Failed to create report: ${error.message}`);
@@ -119,6 +162,46 @@ export class ReportsService {
     } catch (error) {
       this.logger.error(`Failed to fetch reports by date: ${error.message}`);
       throw new InternalServerErrorException('Failed to fetch reports by date');
+    }
+  }
+
+  async assignInspector(reportId: string, assignInspectorDto: AssignInspectorDto) {
+    try {
+      this.logger.log(`Attempting to assign inspector ${assignInspectorDto.inspectorId} to report ${reportId}`);
+
+      // First check if the inspector exists and has the correct role
+      const inspector = await this.userModel.findOne({
+        _id: new Types.ObjectId(assignInspectorDto.inspectorId),
+        role: { $in: [Role.Inspector] }
+      });
+
+      if (!inspector) {
+        this.logger.warn(`Inspector ${assignInspectorDto.inspectorId} not found or is not an inspector`);
+        throw new NotFoundException('Inspector not found or is not an inspector');
+      }
+
+      const updatedReport = await this.reportModel.findByIdAndUpdate(
+        reportId,
+        {
+          inspectorId: new Types.ObjectId(assignInspectorDto.inspectorId),
+          status: ReportStatus.REVIEWED
+        },
+        { new: true }
+      ).exec();
+
+      if (!updatedReport) {
+        this.logger.warn(`Report ${reportId} not found for inspector assignment`);
+        throw new NotFoundException('Report not found');
+      }
+
+      this.logger.debug(`Successfully assigned inspector ${assignInspectorDto.inspectorId} to report ${reportId}`);
+      return updatedReport;
+    } catch (error) {
+      this.logger.error(`Failed to assign inspector: ${error.message}`);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to assign inspector');
     }
   }
 }

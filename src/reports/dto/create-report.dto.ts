@@ -18,6 +18,10 @@ export class CreateReportDto {
   @MaxLength(8)
   userId?: string;
 
+  @ApiPropertyOptional({ description: 'Inspector ID if assigned', example: '68121a6264ffc188db6891d1' })
+  @IsOptional()
+  inspectorId?: string;
+
   @ApiProperty({ description: 'Report description', example: "Car parked on the side walk" })
   @IsOptional()
   description: string;

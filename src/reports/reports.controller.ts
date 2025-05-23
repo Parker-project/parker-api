@@ -1,5 +1,7 @@
 import { Controller, Post, Body, Get, Param, Req, Patch, UseGuards, Query, Delete } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import { Inject,Logger } from '@nestjs/common';
 
 import { ReportsService } from './reports.service';
 import { CreateReportDto } from './dto/create-report.dto';
@@ -10,12 +12,16 @@ import { UpdateReportStatusDto } from './dto/update-report-status.dto';
 import { RolesGuard } from 'src/auth/guards/role.guard';
 import { Roles } from 'src/common/decorators/role.decorator';
 import { Role } from 'src/common/enums/role.enum';
+import { AssignInspectorDto } from './dto/assign-inspector.dto';
 
 @ApiTags('reports')
 @Controller('reports')
 @UseGuards(JwtAuthGuard)
 export class ReportsController {
-    constructor(private readonly reportsService: ReportsService) { }
+    constructor(
+        private readonly reportsService: ReportsService,
+        @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger,
+    ) { }
 
     @Post()
     @ApiOperation({ summary: 'Create a new report (can be anonymous)' })
@@ -94,5 +100,19 @@ export class ReportsController {
     @ApiResponse({ status: 200, description: 'List of reports sorted by date' })
     getReportsByDate(@Query('order') order: 'asc' | 'desc' = 'desc') {
         return this.reportsService.getReportsByDate(order);
+    }
+
+    @Patch(':id/assign-inspector')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.Admin)
+    @ApiOperation({ summary: 'Assign an inspector to a report' })
+    @ApiResponse({ status: 200, description: 'Inspector assigned successfully' })
+    @ApiResponse({ status: 404, description: 'Report not found' })
+    async assignInspector(
+        @Param('id') id: string,
+        @Body() assignInspectorDto: AssignInspectorDto
+    ) {
+        this.logger.log(`Assigning inspector to report ${id}`, 'ReportsController');
+        return this.reportsService.assignInspector(id, assignInspectorDto);
     }
 }
