@@ -33,8 +33,6 @@ export class ReportsController {
     }
 
     @Get(':id')
-    @UseGuards(RolesGuard)
-    @Roles(Role.Admin, Role.Inspector, Role.SuperInspector)
     @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Returns user reports' })
     @ApiResponse({ status: 200, description: 'Reports found', type: Report })
