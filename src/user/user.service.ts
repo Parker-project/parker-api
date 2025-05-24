@@ -80,4 +80,11 @@ export class UserService {
         this.logger.log(`Successfully deleted user with ID: ${id}`);
         return { message: 'User deleted successfully' };
     }
+
+    async getUserByRole(role: Role) {
+        this.logger.log(`Fetching users with role: ${role}`);
+        const users = await this.userModel.find({ role }).select('-password -verificationToken -resetToken');
+        this.logger.log(`Found ${users.length} users with role ${role}`);
+        return users;
+    }
 }
