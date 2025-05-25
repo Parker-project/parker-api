@@ -102,7 +102,7 @@ export class ReportsController {
 
     @Patch(':id/assign-inspector')
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(Role.Admin)
+    @Roles(Role.SuperInspector)
     @ApiOperation({ summary: 'Assign an inspector to a report' })
     @ApiResponse({ status: 200, description: 'Inspector assigned successfully' })
     @ApiResponse({ status: 404, description: 'Report not found' })
