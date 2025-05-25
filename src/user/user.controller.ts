@@ -50,8 +50,6 @@ export class UserController {
     }
 
     @Get(':id')
-    @UseGuards(RolesGuard)
-    @Roles(Role.Admin)
     @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Get user by ID' })
     @ApiResponse({ status: 200, description: 'Returns the user details if found.', type: UserDto })
@@ -86,5 +84,16 @@ export class UserController {
     @ApiResponse({ status: 404, description: 'User not found' })
     async delete(@Param('id') id: string) {
         return this.userService.delete(id);
+    }
+
+    @Get('role/:role')
+    @UseGuards(RolesGuard)
+    @Roles(Role.Admin, Role.SuperInspector)
+    @UseGuards(JwtAuthGuard)
+    @ApiOperation({ summary: 'Get users by role' })
+    @ApiResponse({ status: 200, description: 'Returns a list of users with the specified role.', type: [UserDto] })
+    @ApiResponse({ status: 401, description: 'Unauthorized' })
+    async getUsersByRole(@Param('role') role: Role): Promise<UserDto[]> {
+        return this.userService.getUserByRole(role);
     }
 }
