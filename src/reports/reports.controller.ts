@@ -1,7 +1,7 @@
 import { Controller, Post, Body, Get, Param, Req, Patch, UseGuards, Query, Delete } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
-import { Inject,Logger } from '@nestjs/common';
+import { Inject, Logger } from '@nestjs/common';
 
 import { ReportsService } from './reports.service';
 import { CreateReportDto } from './dto/create-report.dto';
@@ -112,5 +112,17 @@ export class ReportsController {
     ) {
         this.logger.log(`Assigning inspector to report ${id}`, 'ReportsController');
         return this.reportsService.assignInspector(id, assignInspectorDto);
+    }
+
+    @Get('inspector/:inspectorId')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(Role.Admin, Role.Inspector, Role.SuperInspector)
+    @ApiOperation({ summary: 'Get reports assigned to a specific inspector' })
+    @ApiParam({ name: 'inspectorId', description: 'ID of the inspector' })
+    @ApiResponse({ status: 200, description: 'List of reports assigned to the inspector', type: [Report] })
+    @ApiResponse({ status: 500, description: 'Internal server error' })
+    async getReportsByInspectorId(@Param('inspectorId') inspectorId: string) {
+        this.logger.log(`Fetching reports for inspector ${inspectorId}`, 'ReportsController');
+        return this.reportsService.getReportsByInspectorId(inspectorId);
     }
 }

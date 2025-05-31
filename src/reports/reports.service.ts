@@ -204,4 +204,17 @@ export class ReportsService {
       throw new InternalServerErrorException('Failed to assign inspector');
     }
   }
+
+  async getReportsByInspectorId(inspectorId: string) {
+    try {
+      this.logger.log(`Fetching reports for inspector ${inspectorId}`);
+      const objectId = new Types.ObjectId(inspectorId);
+      const reports = await this.reportModel.find({ inspectorId: objectId });
+      this.logger.debug(`Found ${reports.length} reports for inspector ${inspectorId}`);
+      return reports || [];
+    } catch (error) {
+      this.logger.error(`Failed to fetch reports for inspector: ${error.message}`);
+      throw new InternalServerErrorException('Failed to fetch reports for inspector');
+    }
+  }
 }
