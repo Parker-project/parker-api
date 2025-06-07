@@ -217,4 +217,42 @@ export class ReportsService {
       throw new InternalServerErrorException('Failed to fetch reports for inspector');
     }
   }
+
+  async reassignInspectorReports(oldInspectorId: string) {
+    try {
+      this.logger.log(`Reassigning reports from inspector ${oldInspectorId}`);
+
+      // Get all reports assigned to the old inspector
+      const reports = await this.reportModel.find({
+        inspectorId: new Types.ObjectId(oldInspectorId)
+      });
+
+      if (reports.length === 0) {
+        this.logger.debug(`No reports found for inspector ${oldInspectorId}`);
+        return;
+      }
+
+      // Get a random inspector (excluding the old inspector)
+      const newInspectorId = await this.getRandomInspector();
+
+      // Update all reports
+      const updatePromises = reports.map(report =>
+        this.reportModel.findByIdAndUpdate(
+          report._id,
+          {
+            inspectorId: newInspectorId ? new Types.ObjectId(newInspectorId) : null,
+            status: newInspectorId ? ReportStatus.REVIEWED : ReportStatus.PENDING
+          },
+          { new: true }
+        )
+      );
+
+      await Promise.all(updatePromises);
+
+      this.logger.debug(`Successfully reassigned ${reports.length} reports from inspector ${oldInspectorId} to ${newInspectorId || 'no inspector'}`);
+    } catch (error) {
+      this.logger.error(`Failed to reassign inspector reports: ${error.message}`);
+      throw new InternalServerErrorException('Failed to reassign inspector reports');
+    }
+  }
 }
