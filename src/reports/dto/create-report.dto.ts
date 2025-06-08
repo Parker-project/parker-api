@@ -32,4 +32,8 @@ export class CreateReportDto {
   @ApiPropertyOptional({ description: 'Location information', type: LocationDto })
   @IsOptional()
   location?: LocationDto;
+
+  @ApiPropertyOptional({ description: 'Images', type: [String] })
+  @IsOptional()
+  images?: string[];
 }

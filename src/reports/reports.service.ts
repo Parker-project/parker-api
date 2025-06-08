@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { Inject } from '@nestjs/common';
-
+import * as fs from 'fs';
 import { Report } from './report.schema';
 import { CreateReportDto } from './dto/create-report.dto';
 import { ReportStatus } from '../common/enums/report-state.enum';
@@ -41,7 +41,7 @@ export class ReportsService {
     }
   }
 
-  async createReport(createReportDto: CreateReportDto, userId: string) {
+  async createReport(createReportDto: CreateReportDto, userId: string, filenames?: string[]) {
     try {
       this.logger.log(`Creating report for ${userId ? userId : 'anonymous'}`);
 
@@ -50,6 +50,7 @@ export class ReportsService {
       const reportData = {
         ...createReportDto,
         userId: userId ? new Types.ObjectId(userId) : undefined,
+        ...(filenames && { images: filenames }),
         inspectorId: randomInspectorId,
         status: randomInspectorId ? ReportStatus.REVIEWED : ReportStatus.PENDING
       };
@@ -254,5 +255,9 @@ export class ReportsService {
       this.logger.error(`Failed to reassign inspector reports: ${error.message}`);
       throw new InternalServerErrorException('Failed to reassign inspector reports');
     }
+  }
+  
+  getImage(filePath: string) {
+    return fs.readFileSync(filePath);
   }
 }

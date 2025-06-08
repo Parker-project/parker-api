@@ -33,6 +33,9 @@ export class Report extends Document {
     longitude: number;
     address: string;
   };
+
+  @Prop({ type: [String], required: false })
+  images: string[];
 }
 
 export const ReportSchema = SchemaFactory.createForClass(Report);
