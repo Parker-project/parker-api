@@ -82,7 +82,7 @@ export class ReportsController {
   })
   @ApiResponse({ status: 400, description: 'Invalid input' })
   async createReport(
-    @Body() createReportDto: Partial<CreateReportDto>,
+    @Body() createReportDto: CreateReportDto,
     @Req() req: any,
     @UploadedFiles() files?: Express.Multer.File[],
   ) {
