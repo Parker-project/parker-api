@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, MaxLength, maxLength } from 'class-validator';
+import { IsOptional } from 'class-validator';
 
 class LocationDto {
   @ApiProperty({ description: 'Latitude', example: 31.7683 })
@@ -15,7 +15,6 @@ class LocationDto {
 export class CreateReportDto {
   @ApiPropertyOptional({ description: 'User ID if provided, else anonymous', example: '68121a6264ffc188db6891d1' })
   @IsOptional()
-  @MaxLength(8)
   userId?: string;
 
   @ApiPropertyOptional({ description: 'Inspector ID if assigned', example: '68121a6264ffc188db6891d1' })
