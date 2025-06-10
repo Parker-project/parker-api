@@ -1,5 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { Type } from 'class-transformer';
+import { IsOptional, ValidateNested } from 'class-validator';
 
 class LocationDto {
   @ApiProperty({ description: 'Latitude', example: 31.7683 })
@@ -30,6 +32,18 @@ export class CreateReportDto {
 
   @ApiPropertyOptional({ description: 'Location information', type: LocationDto })
   @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value) as LocationDto;
+      } catch {
+        return undefined;
+      }
+    }
+    return value as LocationDto;
+  })
+  @ValidateNested()
+  @Type(() => LocationDto)
   location?: LocationDto;
 
   @ApiPropertyOptional({ description: 'Images', type: [String] })

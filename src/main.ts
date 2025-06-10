@@ -27,7 +27,7 @@ async function bootstrap() {
     exposedHeaders: ['Set-Cookie'],
   });
 
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
 
   // Add session middleware
