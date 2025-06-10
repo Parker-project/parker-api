@@ -41,7 +41,7 @@ import * as path from 'path';
 
 @ApiTags('reports')
 @Controller('reports')
-// @UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard)
 export class ReportsController {
   constructor(
     private readonly reportsService: ReportsService,
