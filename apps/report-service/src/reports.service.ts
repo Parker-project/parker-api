@@ -6,10 +6,10 @@ import { Inject } from '@nestjs/common';
 import * as fs from 'fs';
 import { Report } from './report.schema';
 import { CreateReportDto } from './dto/create-report.dto';
-import { ReportStatus } from '../common/enums/report-state.enum';
+import { ReportStatus } from './enums/report-state.enum';
 import { AssignInspectorDto } from './dto/assign-inspector.dto';
-import { User } from '../user/user.schema';
-import { Role } from '../common/enums/role.enum';
+import { User } from 'libs/user/src/user.schema';
+import { Role } from 'libs/common/enums/role.enum';
 
 @Injectable()
 export class ReportsService {

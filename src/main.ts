@@ -9,12 +9,9 @@ import { ValidationPipe } from '@nestjs/common';
 import * as passport from 'passport';
 
 import { AppModule } from './app.module';
-import { winstonLoggerConfig } from './common/logger/logger';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
-    logger: WinstonModule.createLogger(winstonLoggerConfig)
-  });
+  const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api');
 
   const configService = app.get(ConfigService);

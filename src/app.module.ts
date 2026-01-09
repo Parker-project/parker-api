@@ -6,12 +6,11 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
-import { LoggerModule } from './common/logger/logger.module';
-import { ReportsModule } from './reports/reports.module';
+import { ReportsModule } from 'apps/report-service/src/reports.module';
 import { OcrModule } from './ocr/ocr.module';
 
 @Module({
-  imports: [AuthModule, UserModule, MongooseModule.forRoot(process.env.MONGO_URI || 'mongodb://localhost:27017/parker'), LoggerModule, ReportsModule,
+  imports: [AuthModule, UserModule, MongooseModule.forRoot(process.env.MONGO_URI || 'mongodb://localhost:27017/parker'), ReportsModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
