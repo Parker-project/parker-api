@@ -1,0 +1,20 @@
+# Dependency directories
+node_modules
+npm-debug.log
+
+# Build output
+dist
+artifacts
+
+# Docker files
+Dockerfile
+docker-compose.yml
+
+# Git and OS metadata
+.git
+.gitignore
+.vscode
+.DS_Store
+
+# Sensitive information (we provide these via Compose)
+.env
